@@ -205,9 +205,10 @@ class MultivariateGaussian:
         pdfs_matrix = -0.5 * ((X - mu) @ np.linalg.inv(cov) * (X - mu))
 
         return ((-len(mu) * len(X)) / 2) * np.log(2 * np.pi) - (len(X) *
-                                            np.log( np.linalg.det(
-                                            cov)) / 2) + np.sum(pdfs_matrix)
-
+                                                                np.log(
+                                                                    np.linalg.det(
+                                                                        cov)) / 2) + np.sum(
+            pdfs_matrix)
 
 
 #
@@ -218,5 +219,3 @@ def multi_gaussian_pdf(sample, mu, cov):
                                     np.matmul(cov_inv,
                                               new_matrix))) / 2)) / (
                    (np.linalg.det(cov) * ((2 * np.pi) ** len(mu))) ** 0.5)
-
-

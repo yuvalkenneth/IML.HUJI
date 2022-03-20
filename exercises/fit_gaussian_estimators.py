@@ -7,6 +7,7 @@ from IMLearn.learners import MultivariateGaussian, UnivariateGaussian
 HEAT_MAP_TITLE = "log-likelihood evaluation"
 
 pio.templates.default = "simple_white"
+pio.renderers.default = "browser"
 
 
 def test_univariate_gaussian():
@@ -77,9 +78,11 @@ def test_multivariate_gaussian():
     go.Figure(go.Heatmap(x=data, y=data, z=Z),
               layout=go.Layout(title=HEAT_MAP_TITLE, height=700,
                                width=1500)).show()
-
     # Question 6 - Maximum likelihood
-    # raise NotImplementedError()
+    print(
+        f"maximum log-likelihood in : "
+        f"{[format(coor[i], '0.3f') for i in [0, 1]]}"
+        f" and the value is : {format(maximum, '0.3f')}")
 
 
 if __name__ == '__main__':
