@@ -1,12 +1,14 @@
 from __future__ import annotations
+
+import numpy
 import numpy as np
-from numpy.linalg import inv, det, slogdet
 
 
 class UnivariateGaussian:
     """
     Class for univariate Gaussian Distribution Estimator
     """
+
     def __init__(self, biased_var: bool = False) -> UnivariateGaussian:
         """
         Estimator for univariate Gaussian mean and variance parameters
@@ -51,8 +53,8 @@ class UnivariateGaussian:
         Sets `self.mu_`, `self.var_` attributes according to calculated estimation (where
         estimator is either biased or unbiased). Then sets `self.fitted_` attribute to `True`
         """
-        raise NotImplementedError()
-
+        self.mu_ = sum(X) / len(X)
+        self.var_ = sum((X - self.mu_) ** 2) / (len(X) - 1)
         self.fitted_ = True
         return self
 
@@ -75,8 +77,11 @@ class UnivariateGaussian:
         ValueError: In case function was called prior fitting the model
         """
         if not self.fitted_:
-            raise ValueError("Estimator must first be fitted before calling `pdf` function")
-        raise NotImplementedError()
+            raise ValueError(
+                "Estimator must first be fitted before calling `pdf` function")
+        exponent = -1 * ((X - self.mu_) ** 2) / (2 * self.var_)
+
+        return (np.e ** exponent) / ((2 * np.pi * self.var_) ** 0.5)
 
     @staticmethod
     def log_likelihood(mu: float, sigma: float, X: np.ndarray) -> float:
@@ -97,13 +102,17 @@ class UnivariateGaussian:
         log_likelihood: float
             log-likelihood calculated
         """
-        raise NotImplementedError()
+        exp_expression = (-1 / (2 * sigma)) * np.sum((X - mu) ** 2)
+        likelihood = (-len(X) / 2) * np.log(2 * np.pi * sigma) + exp_expression
+
+        return likelihood
 
 
 class MultivariateGaussian:
     """
     Class for multivariate Gaussian Distribution Estimator
     """
+
     def __init__(self):
         """
         Initialize an instance of multivariate Gaussian estimator
@@ -143,8 +152,10 @@ class MultivariateGaussian:
         Sets `self.mu_`, `self.cov_` attributes according to calculated estimation.
         Then sets `self.fitted_` attribute to `True`
         """
-        raise NotImplementedError()
-
+        self.mu_ = (X.sum(axis=0) / len(X))
+        self.cov_ = (
+                        numpy.matmul(numpy.transpose((X - self.mu_)),
+                                     (X - self.mu_))) / (len(X) - 1)
         self.fitted_ = True
         return self
 
@@ -167,11 +178,13 @@ class MultivariateGaussian:
         ValueError: In case function was called prior fitting the model
         """
         if not self.fitted_:
-            raise ValueError("Estimator must first be fitted before calling `pdf` function")
-        raise NotImplementedError()
+            raise ValueError(
+                "Estimator must first be fitted before calling `pdf` function")
+        return multi_gaussian_pdf(X, self.mu_, self.cov_)
 
     @staticmethod
-    def log_likelihood(mu: np.ndarray, cov: np.ndarray, X: np.ndarray) -> float:
+    def log_likelihood(mu: np.ndarray, cov: np.ndarray,
+                       X: np.ndarray) -> float:
         """
         Calculate the log-likelihood of the data under a specified Gaussian model
 
@@ -189,4 +202,21 @@ class MultivariateGaussian:
         log_likelihood: float
             log-likelihood calculated
         """
-        raise NotImplementedError()
+        pdfs_matrix = -0.5 * ((X - mu) @ np.linalg.inv(cov) * (X - mu))
+
+        return ((-len(mu) * len(X)) / 2) * np.log(2 * np.pi) - (len(X) *
+                                            np.log( np.linalg.det(
+                                            cov)) / 2) + np.sum(pdfs_matrix)
+
+
+
+#
+def multi_gaussian_pdf(sample, mu, cov):
+    cov_inv = np.linalg.inv(cov)
+    new_matrix = sample - mu
+    return (np.e ** (-(numpy.matmul(np.transpose(new_matrix),
+                                    np.matmul(cov_inv,
+                                              new_matrix))) / 2)) / (
+                   (np.linalg.det(cov) * ((2 * np.pi) ** len(mu))) ** 0.5)
+
+
