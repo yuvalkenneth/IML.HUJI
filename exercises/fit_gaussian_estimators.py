@@ -75,9 +75,11 @@ def test_multivariate_gaussian():
 
         Z.append(likelihood)
     Z = np.transpose(Z)
-    go.Figure(go.Heatmap(x=data, y=data, z=Z),
-              layout=go.Layout(title=HEAT_MAP_TITLE, height=700,
-                               width=1500)).show()
+    go.Figure(go.Heatmap(x=data, y=data, z=Z)).update_layout(
+        title=HEAT_MAP_TITLE
+        , xaxis_title="f1 values", yaxis_title="f3  values",
+        height=800, width=1500).show()
+
     # Question 6 - Maximum likelihood
     print(
         f"maximum log-likelihood in : "
