@@ -55,7 +55,7 @@ def test_multivariate_gaussian():
     multi_gauss = MultivariateGaussian()
 
     multi_gauss.fit(samples)
-    print(multi_gauss.mu_, '\n', multi_gauss.cov_)
+    print(f"expectation:{multi_gauss.mu_}, \ncov matrix: {multi_gauss.cov_}")
 
     # Question 5 - Likelihood evaluation
     data = np.linspace(-10, 10, 200)

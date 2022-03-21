@@ -53,8 +53,11 @@ class UnivariateGaussian:
         Sets `self.mu_`, `self.var_` attributes according to calculated estimation (where
         estimator is either biased or unbiased). Then sets `self.fitted_` attribute to `True`
         """
-        self.mu_ = sum(X) / len(X)
-        self.var_ = sum((X - self.mu_) ** 2) / (len(X) - 1)
+        self.mu_ = np.mean(X)
+        if self.biased_:
+            self.var_ = X.var(ddof=0)
+        else:
+            self.var_ = X.var(ddof=1)
         self.fitted_ = True
         return self
 
@@ -219,3 +222,15 @@ def multi_gaussian_pdf(sample, mu, cov):
                                     np.matmul(cov_inv,
                                               new_matrix))) / 2)) / (
                    (np.linalg.det(cov) * ((2 * np.pi) ** len(mu))) ** 0.5)
+
+
+samples = np.array(
+    [1, 5, 2, 3, 8, -4, -2, 5, 1, 10, -10, 4, 5, 2, 7, 1, 1, 3, 2, -1, -3, 1,
+     -4, 1, 2, 1,
+     -4, -4, 1, 3, 2, 6, -6, 8, 3, -6, 4, 1, -2, 3, 1, 4, 1, 4, -2, 3, -1, 0,
+     3, 5, 0, -2])
+new = UnivariateGaussian()
+new.fit(samples)
+print(new.log_likelihood(10,1,np.array([1, 5, 2, 3, 8, -4, -2, 5, 1, 10,
+                                        -10, 4, 5, 2, 7, 1, 1, 3, 2, -1, -3, 1, -4, 1, 2, 1,
+          -4, -4, 1, 3, 2, 6, -6, 8, 3, -6, 4, 1, -2, 3, 1, 4, 1, 4, -2, 3, -1, 0, 3, 5, 0, -2])))
