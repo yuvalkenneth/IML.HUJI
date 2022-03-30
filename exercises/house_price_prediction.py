@@ -1,12 +1,31 @@
-from IMLearn.utils import split_train_test
-from IMLearn.learners.regressors import LinearRegression
-
 from typing import NoReturn
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 import plotly.io as pio
+
+from IMLearn.utils.utils import split_train_test
+
+SQFT_LOT_15 = 'sqft_lot15'
+
+SQFT_LIVING_15 = 'sqft_living15'
+
+ZIPCODE = 'zipcode'
+
+ID = 'id'
+
+DATE = 'date'
+
+PRICE = 'price'
+
+SQFT_LOT_15_NEW_LABEL = 'sqft_lot area relative to neighbors'
+
+SQFT_LIVING_15_NEW_LABEL = 'sqft_lvng area relative to ' \
+                           'neighbors'
+
+pio.templates.default = "simple_white"
+pio.renderers.default = "browser"
 pio.templates.default = "simple_white"
 
 
@@ -23,10 +42,14 @@ def load_data(filename: str):
     Design matrix and response vector (prices) - either as a single
     DataFrame or a Tuple[DataFrame, Series]
     """
-    raise NotImplementedError()
+
+    data = pd.read_csv(filename)
+    data, labels = clean_data(data)
+    return data, labels
 
 
-def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") -> NoReturn:
+def feature_evaluation(X: pd.DataFrame, y: pd.Series,
+                       output_path: str = ".") -> NoReturn:
     """
     Create scatter plot between each feature and the response.
         - Plot title specifies feature name
@@ -43,25 +66,93 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
     output_path: str (default ".")
         Path to folder in which plots are saved
     """
-    raise NotImplementedError()
+
+    corr = peasron_corr(X, y)
+    labels = X.columns.values
+    for i in corr:
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=list(X[i]), y=list(y), mode='markers',
+                                 name=f"pearson correlation : {i}"))
+        fig.update_layout(xaxis_title=f"{i}", yaxis_title="price"
+                          , title=f"pearson correlation : {corr[i]}")
+        fig.show()
+        fig.write_image(output_path + f"\{i}.png", format='png')
+
+
+def peasron_corr(X, y):
+    # features_std = X.std(axis=0, ddof=1)
+    # labels_std = y.std(axis=0, ddof=1)
+    # cov_vec = [np.cov(X[:, i], y)[0][1] for i in range(
+    #     np.shape(X)[1])]
+    # pears_corr = [(cov_vec[i] / (features_std[i] * labels_std)) for i in
+    #               range(len(cov_vec))]
+    features_std = X.std()
+    labels_std = y.std()
+    cov_vector = X.apply(lambda col: y.cov(col))
+    return {key: cov_vector[key] / (features_std[key] * labels_std) for key in
+            cov_vector.keys()}
+
+
+def clean_data(data):
+    data = data.drop(data[(data.bathrooms <= 0) | (data.bedrooms <= 0)
+                          | (data.sqft_living <= 0) | (data.sqft_lot <= 0)
+                          | (data.condition <= 0) | (data.grade <= 0) |
+                          (data.price <= 0) | (data.floors <= 0)
+                          | (data.sqft_above <= 0) | (
+                                  data.yr_built <= 0)].index)
+    grade_categorization(data)
+    data = drop_duplicates_by_date(data)
+    calculate_area_relative_to_15_neighbors(data)
+    data.dropna()
+    labels = data[PRICE]
+    data = data.drop(labels=[PRICE, DATE, ID, ZIPCODE], axis=1)
+
+    return data, labels
+
+
+def calculate_area_relative_to_15_neighbors(data):
+    data.sqft_living15 = data.sqft_living / data.sqft_living15
+    data.sqft_lot15 = data.sqft_lot / data.sqft_lot15
+    data.rename(columns={SQFT_LIVING_15: SQFT_LIVING_15_NEW_LABEL, \
+                         SQFT_LOT_15: SQFT_LOT_15_NEW_LABEL},
+                inplace=True)
+
+
+def drop_duplicates_by_date(data):
+    data.sort_values(by='date')
+    return data.drop_duplicates(subset='id', keep='last')
+
+
+def grade_categorization(data):
+    data.loc[(data['grade'] > 0) & (data['grade'] <= 3), 'grade'] = 1
+    data.loc[(data['grade'] > 3) & (data['grade'] <= 7), 'grade'] = 2
+    data.loc[(data['grade'] > 7) & (data['grade'] <= 10), 'grade'] = 3
+    data.loc[(data['grade'] > 10) & (data['grade'] <= 13), 'grade'] = 4
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    # Question 1 - Load and preprocessing of housing prices dataset
-    raise NotImplementedError()
+    #     # Question 1 - Load and preprocessing of housing prices dataset
+    path = r"C:\Users\yuval\Desktop\github\IML.HUJI\datasets\house_prices.csv"
+    X, y = load_data(path)
+    #
 
-    # Question 2 - Feature evaluation with respect to response
-    raise NotImplementedError()
+#     # Question 2 - Feature evaluation with respect to response
+#     feature_evaluation(X, y, r"C:\Users\yuval\Desktop")
+#     # Question 3 - Split samples into training- and testing sets.
+    train_x, train_y, test_x, test_y = split_train_test(X,y, 0.75)
+    print(5)
+#     raise NotImplementedError()
+#
+#     # Question 4 - Fit model over increasing percentages of the overall training data
+#     # For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
+#     #   1) Sample p% of the overall training data
+#     #   2) Fit linear model (including intercept) over sampled set
+#     #   3) Test fitted model over test set
+#     #   4) Store average and variance of loss over test set
+#     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
+#     raise NotImplementedError()
 
-    # Question 3 - Split samples into training- and testing sets.
-    raise NotImplementedError()
-
-    # Question 4 - Fit model over increasing percentages of the overall training data
-    # For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
-    #   1) Sample p% of the overall training data
-    #   2) Fit linear model (including intercept) over sampled set
-    #   3) Test fitted model over test set
-    #   4) Store average and variance of loss over test set
-    # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
-    raise NotImplementedError()
+# data = data.to_numpy()
+# y = y.to_numpy()
+# y = y.transpose()
