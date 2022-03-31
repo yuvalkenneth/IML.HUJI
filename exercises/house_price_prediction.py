@@ -5,6 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
 
+from IMLearn.learners.regressors import LinearRegression
 from IMLearn.utils.utils import split_train_test
 
 SQFT_LOT_15 = 'sqft_lot15'
@@ -67,8 +68,7 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series,
         Path to folder in which plots are saved
     """
 
-    corr = peasron_corr(X, y)
-    labels = X.columns.values
+    corr = peasron_corr(X.iloc[:,0:17], y)
     for i in corr:
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=list(X[i]), y=list(y), mode='markers',
@@ -76,7 +76,7 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series,
         fig.update_layout(xaxis_title=f"{i}", yaxis_title="price"
                           , title=f"pearson correlation : {corr[i]}")
         fig.show()
-        fig.write_image(output_path + f"\{i}.png", format='png')
+        # fig.write_image(output_path + f"\{i}.png", format='png')
 
 
 def peasron_corr(X, y):
@@ -103,10 +103,11 @@ def clean_data(data):
     grade_categorization(data)
     data = drop_duplicates_by_date(data)
     calculate_area_relative_to_15_neighbors(data)
-    data.dropna()
+    data.dropna(inplace=True)
+    zipcodes_coding = pd.get_dummies(data[ZIPCODE])
     labels = data[PRICE]
     data = data.drop(labels=[PRICE, DATE, ID, ZIPCODE], axis=1)
-
+    data = data.join(zipcodes_coding)
     return data, labels
 
 
@@ -137,12 +138,10 @@ if __name__ == '__main__':
     X, y = load_data(path)
     #
 
-#     # Question 2 - Feature evaluation with respect to response
-#     feature_evaluation(X, y, r"C:\Users\yuval\Desktop")
-#     # Question 3 - Split samples into training- and testing sets.
-    train_x, train_y, test_x, test_y = split_train_test(X,y, 0.75)
-    print(5)
-#     raise NotImplementedError()
+    #     # Question 2 - Feature evaluation with respect to response
+    # feature_evaluation(X, y, r"C:\Users\yuval\Desktop")
+    #     # Question 3 - Split samples into training- and testing sets.
+    train_x, train_y, test_x, test_y = split_train_test(X, y, 0.75)
 #
 #     # Question 4 - Fit model over increasing percentages of the overall training data
 #     # For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
@@ -151,8 +150,29 @@ if __name__ == '__main__':
 #     #   3) Test fitted model over test set
 #     #   4) Store average and variance of loss over test set
 #     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
-#     raise NotImplementedError()
+means_dictionary = {}
+for i in range(10, 101):
+    current_mean_error = []
+    for j in range(10):
+        min_train_x, min_train_y, min_test_xm, min_test_y = split_train_test(
+            train_x, train_y, i / 100)
+        linear_model = LinearRegression()
+        linear_model.fit(min_train_x.to_numpy(), min_train_y.to_numpy())
+        current_mean_error.append(linear_model.loss(test_x.to_numpy(),
+                                                    test_y.to_numpy()))
 
-# data = data.to_numpy()
-# y = y.to_numpy()
-# y = y.transpose()
+    means_dictionary[i] = (np.mean(current_mean_error), np.std(
+        current_mean_error, ddof=1))
+x_axis = list(means_dictionary.keys())
+y_axis = np.array([means_dictionary[i][0] for i in means_dictionary])
+var_pred = np.array([means_dictionary[i][1] for i in means_dictionary])
+fig2 = go.Figure(go.Scatter(x=x_axis, y=y_axis, mode='markers+lines',
+                            name="Mean Prediction", line=dict(dash="dash"),
+                            marker=dict(color="green", opacity=.7)))
+fig2.add_scatter(x=x_axis, y=y_axis+2*var_pred, mode='lines',name="mean + "
+                                                                  "2 * std")
+fig2.add_scatter(x=x_axis, y=y_axis-2*var_pred, mode='lines',name="mean - "
+                                                                  "2 * std")
+fig2.show()
+
+print(5)
