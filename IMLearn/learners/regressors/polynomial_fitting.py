@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from typing import NoReturn
-
+from IMLearn.base import BaseEstimator
 import numpy as np
+from IMLearn.metrics.loss_functions import mean_square_error
+from IMLearn.learners.regressors import LinearRegression
 
-from ...base import BaseEstimator
 
-
-class PolynomialFitting(BaseEstimator):
+class PolynomialFitting(LinearRegression):
     """
     Polynomial Fitting using Least Squares estimation
     """
@@ -21,9 +21,8 @@ class PolynomialFitting(BaseEstimator):
         k : int
             Degree of polynomial to fit
         """
-        super().__init__()
+        super().__init__(include_intercept=False)
         self.degree = k
-        self.coef = None
 
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
@@ -37,8 +36,7 @@ class PolynomialFitting(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        X = self.__transform(X)
-        self.coef = super().fit(X, y)
+        super()._fit(self.__transform(X), y)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -54,7 +52,7 @@ class PolynomialFitting(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        return super().predict(X)
+        return super()._predict(self.__transform(X))
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -73,7 +71,8 @@ class PolynomialFitting(BaseEstimator):
         loss : float
             Performance under MSE loss function
         """
-        return super().loss(X, y)
+        y_pred = self._predict(X)
+        return mean_square_error(y,y_pred)
 
     def __transform(self, X: np.ndarray) -> np.ndarray:
         """
@@ -88,4 +87,4 @@ class PolynomialFitting(BaseEstimator):
         transformed: ndarray of shape (n_samples, k+1)
             Vandermonde matrix of given samples up to degree k
         """
-        return np.vander(X, self.degree)
+        return np.vander(X, self.degree + 1, increasing=True)
