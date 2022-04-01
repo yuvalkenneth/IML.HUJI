@@ -27,7 +27,7 @@ SQFT_LIVING_15_NEW_LABEL = 'sqft_lvng area relative to ' \
 
 pio.templates.default = "simple_white"
 pio.renderers.default = "browser"
-pio.templates.default = "simple_white"
+
 
 
 def load_data(filename: str):
