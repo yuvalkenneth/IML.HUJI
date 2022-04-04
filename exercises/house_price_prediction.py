@@ -68,7 +68,7 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series,
         Path to folder in which plots are saved
     """
 
-    corr = peasron_corr(X.iloc[:,0:17], y)
+    corr = pearson_corr(X.iloc[:, 0:17], y)
     for i in corr:
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=list(X[i]), y=list(y), mode='markers',
@@ -76,16 +76,11 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series,
         fig.update_layout(xaxis_title=f"{i}", yaxis_title="price"
                           , title=f"pearson correlation : {corr[i]}")
         fig.show()
-        # fig.write_image(output_path + f"\{i}.png", format='png')
+        fig.write_image(output_path + f"\{i}.png", format='png')
 
 
-def peasron_corr(X, y):
-    # features_std = X.std(axis=0, ddof=1)
-    # labels_std = y.std(axis=0, ddof=1)
-    # cov_vec = [np.cov(X[:, i], y)[0][1] for i in range(
-    #     np.shape(X)[1])]
-    # pears_corr = [(cov_vec[i] / (features_std[i] * labels_std)) for i in
-    #               range(len(cov_vec))]
+def pearson_corr(X, y):
+
     features_std = X.std()
     labels_std = y.std()
     cov_vector = X.apply(lambda col: y.cov(col))
@@ -133,14 +128,13 @@ def grade_categorization(data):
 
 if __name__ == '__main__':
     np.random.seed(0)
-    #     # Question 1 - Load and preprocessing of housing prices dataset
+    # Question 1 - Load and preprocessing of housing prices dataset
     path = r"C:\Users\yuval\Desktop\github\IML.HUJI\datasets\house_prices.csv"
     X, y = load_data(path)
-    #
 
     #     # Question 2 - Feature evaluation with respect to response
-    # feature_evaluation(X, y, r"C:\Users\yuval\Desktop")
-    #     # Question 3 - Split samples into training- and testing sets.
+    feature_evaluation(X, y)
+    # Question 3 - Split samples into training- and testing sets.
     train_x, train_y, test_x, test_y = split_train_test(X, y, 0.75)
 #
 #     # Question 4 - Fit model over increasing percentages of the overall training data
