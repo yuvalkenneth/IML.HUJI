@@ -5,7 +5,7 @@ import numpy as np
 import plotly.express as px
 import plotly.io as pio
 
-from IMLearn.learners.classifiers import Perceptron, GaussianNaiveBayes
+from IMLearn.learners.classifiers import Perceptron, GaussianNaiveBayes,LDA
 
 pio.templates.default = "simple_white"
 sys.path.append(r"C:\Users\yuval\Desktop\github\IML.HUJI\datasets")
@@ -61,7 +61,7 @@ def run_perceptron():
         loss = report.loss
 
         # Plot figure
-        px.scatter(y=loss).show()
+        px.line(y=loss).show()
 
 
 def compare_gaussian_classifiers():
@@ -82,18 +82,18 @@ def compare_gaussian_classifiers():
 
 if __name__ == '__main__':
     np.random.seed(0)
-    run_perceptron()
+    # run_perceptron()
     # compare_gaussian_classifiers()
-    # new = LDA()
+    new = LDA()
     data = np.load(r"gaussian1.npy")
-    # new.fit(data[:,0:-1], data[:,-1])
-    # y = new.likelihood(data[:,0:-1])
+    new.fit(data[:,0:-1], data[:,-1])
+    y = new._predict(data[:,0:-1])
     # z = lda()
     # new.loss(data[:,0:-1], data[:,-1])
     # z.fit(data[:,0:-1], data[:,-1])
     # k = z.predict_proba(data[:,0:-1])
-    test = GaussianNaiveBayes()
-    test.fit(data[:, 0:-1], data[:, -1])
-    y = test.likelihood(data[:, 0:-1])
+    # test = GaussianNaiveBayes()
+    # test.fit(data[:, 0:-1], data[:, -1])
+    # y = test.likelihood(data[:, 0:-1])
 
     print(5)

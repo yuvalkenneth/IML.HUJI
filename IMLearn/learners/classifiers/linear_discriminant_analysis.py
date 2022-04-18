@@ -60,7 +60,7 @@ class LDA(BaseEstimator):
         self.mu_ = np.array([])
         m = len(y)
         cov_ = None
-        for i in samples_by_class:
+        for i in self.classes_:
             self.pi_ = np.append(self.pi_, len(samples_by_class[i]) / m)
             if len(self.mu_) == 0:
                 self.mu_ = np.append(self.mu_, samples_by_class[i].mean(
@@ -95,13 +95,7 @@ class LDA(BaseEstimator):
         likelihoods = self.likelihood(X)
         y_pred = np.array([])
         for sample in likelihoods:
-            max_likelihood = 0
-            pred = None
-            for label in self.classes_:
-                ind = int(label)
-                if sample[ind] > max_likelihood:
-                    max_likelihood = sample[ind]
-                    pred = label
+            pred = np.argmax(sample)
             y_pred = np.append(y_pred, pred)
 
         return y_pred
