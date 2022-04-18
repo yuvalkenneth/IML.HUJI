@@ -1,11 +1,17 @@
 from typing import NoReturn
-from ...base import BaseEstimator
+
 import numpy as np
+import scipy.stats
+
+from IMLearn.metrics.loss_functions import misclassification_error
+from ...base import BaseEstimator
+
 
 class GaussianNaiveBayes(BaseEstimator):
     """
     Gaussian Naive-Bayes classifier
     """
+
     def __init__(self):
         """
         Instantiate a Gaussian Naive Bayes classifier
@@ -39,7 +45,33 @@ class GaussianNaiveBayes(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        raise NotImplementedError()
+        self.classes_ = np.unique(y).astype(int)
+        samples_by_class = {}
+        for i in range(len(y)):
+            if y[i] not in samples_by_class:
+                samples_by_class[y[i]] = np.array([X[i]])
+            else:
+                samples_by_class[y[i]] = np.vstack([samples_by_class[y[i]],
+                                                    np.array(X[i])])
+        m = len(y)
+        self.pi_ = np.array([len(samples_by_class[label]) / m for label in
+                             self.classes_])
+        self.mu_ = None
+        self.vars_ = None
+        self.gauss_param_calc(samples_by_class)
+
+    def gauss_param_calc(self, samples_by_class):
+        for i in samples_by_class:
+            if self.mu_ is None:
+                self.mu_ = np.array(samples_by_class[i].mean(axis=0))
+            else:
+                self.mu_ = np.vstack(
+                    [self.mu_, samples_by_class[i].mean(axis=0)])
+            if self.vars_ is None:
+                self.vars_ = np.var(samples_by_class[i], axis=0, ddof=1)
+            else:
+                self.vars_ = np.vstack(
+                    [self.vars_, np.var(samples_by_class[i], axis=0, ddof=1)])
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -55,7 +87,17 @@ class GaussianNaiveBayes(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+        likelihoods = self.likelihood(X)
+        y_pred = np.array([])
+        for sample in likelihoods:
+            max_likelihood = 0
+            pred = None
+            for label in self.classes_:
+                ind = int(label)
+                if sample[ind] > max_likelihood:
+                    max_likelihood = sample[ind]
+                    pred = label
+            y_pred = np.append(y_pred, pred)
 
     def likelihood(self, X: np.ndarray) -> np.ndarray:
         """
@@ -73,9 +115,23 @@ class GaussianNaiveBayes(BaseEstimator):
 
         """
         if not self.fitted_:
-            raise ValueError("Estimator must first be fitted before calling `likelihood` function")
+            raise ValueError(
+                "Estimator must first be fitted before calling `likelihood` function")
 
-        raise NotImplementedError()
+        likelihood = None
+        for sample in X:
+            sample_likelihood = np.array([])
+            for y in self.classes_:
+                ind = int(y)
+                likelihood_y = scipy.stats.multivariate_normal.pdf(
+                    sample, self.mu_[ind], np.diag(self.vars_[ind])) * \
+                               self.pi_[ind]
+                sample_likelihood = np.append(sample_likelihood, likelihood_y)
+            if likelihood is None:
+                likelihood = sample_likelihood
+            else:
+                likelihood = np.vstack([likelihood, sample_likelihood])
+        return likelihood
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -94,4 +150,5 @@ class GaussianNaiveBayes(BaseEstimator):
         loss : float
             Performance under missclassification loss function
         """
-        raise NotImplementedError()
+        y_pred = self._predict(X)
+        return misclassification_error(y, y_pred)

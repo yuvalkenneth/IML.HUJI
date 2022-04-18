@@ -136,37 +136,36 @@ if __name__ == '__main__':
     feature_evaluation(X, y)
     # Question 3 - Split samples into training- and testing sets.
     train_x, train_y, test_x, test_y = split_train_test(X, y, 0.75)
-#
-#     # Question 4 - Fit model over increasing percentages of the overall training data
-#     # For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
-#     #   1) Sample p% of the overall training data
-#     #   2) Fit linear model (including intercept) over sampled set
-#     #   3) Test fitted model over test set
-#     #   4) Store average and variance of loss over test set
-#     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
-means_dictionary = {}
-for i in range(10, 101):
-    current_mean_error = []
-    for j in range(10):
-        min_train_x, min_train_y, min_test_xm, min_test_y = split_train_test(
-            train_x, train_y, i / 100)
-        linear_model = LinearRegression()
-        linear_model.fit(min_train_x.to_numpy(), min_train_y.to_numpy())
-        current_mean_error.append(linear_model.loss(test_x.to_numpy(),
-                                                    test_y.to_numpy()))
+    #
+    #     # Question 4 - Fit model over increasing percentages of the overall training data
+    #     # For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
+    #     #   1) Sample p% of the overall training data
+    #     #   2) Fit linear model (including intercept) over sampled set
+    #     #   3) Test fitted model over test set
+    #     #   4) Store average and variance of loss over test set
+    #     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
+    means_dictionary = {}
+    for i in range(10, 101):
+        current_mean_error = []
+        for j in range(10):
+            min_train_x, min_train_y, min_test_xm, min_test_y = split_train_test(
+                train_x, train_y, i / 100)
+            linear_model = LinearRegression()
+            linear_model.fit(min_train_x.to_numpy(), min_train_y.to_numpy())
+            current_mean_error.append(linear_model.loss(test_x.to_numpy(),
+                                                        test_y.to_numpy()))
 
-    means_dictionary[i] = (np.mean(current_mean_error), np.std(
-        current_mean_error, ddof=1))
-x_axis = list(means_dictionary.keys())
-y_axis = np.array([means_dictionary[i][0] for i in means_dictionary])
-var_pred = np.array([means_dictionary[i][1] for i in means_dictionary])
-fig2 = go.Figure(go.Scatter(x=x_axis, y=y_axis, mode='markers+lines',
-                            name="Mean Prediction", line=dict(dash="dash"),
-                            marker=dict(color="green", opacity=.7)))
-fig2.add_scatter(x=x_axis, y=y_axis+2*var_pred, mode='lines',name="mean + "
-                                                                  "2 * std")
-fig2.add_scatter(x=x_axis, y=y_axis-2*var_pred, mode='lines',name="mean - "
-                                                                  "2 * std")
-fig2.show()
+        means_dictionary[i] = (np.mean(current_mean_error), np.std(
+            current_mean_error, ddof=1))
+    x_axis = list(means_dictionary.keys())
+    y_axis = np.array([means_dictionary[i][0] for i in means_dictionary])
+    var_pred = np.array([means_dictionary[i][1] for i in means_dictionary])
+    fig2 = go.Figure(go.Scatter(x=x_axis, y=y_axis, mode='markers+lines',
+                                name="Mean Prediction", line=dict(dash="dash"),
+                                marker=dict(color="green", opacity=.7)))
+    fig2.add_scatter(x=x_axis, y=y_axis+2*var_pred, mode='lines',name="mean + "
+                                                                      "2 * std")
+    fig2.add_scatter(x=x_axis, y=y_axis-2*var_pred, mode='lines',name="mean - "
+                                                                      "2 * std")
+    fig2.show()
 
-print(5)

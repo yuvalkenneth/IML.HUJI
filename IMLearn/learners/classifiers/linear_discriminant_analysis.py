@@ -1,8 +1,9 @@
 from typing import NoReturn
-from ...base import BaseEstimator
+from IMLearn.metrics.loss_functions import misclassification_error
 import numpy as np
-from numpy.linalg import det, inv
 
+from ...base import BaseEstimator
+import scipy.stats
 
 class LDA(BaseEstimator):
     """
@@ -25,6 +26,7 @@ class LDA(BaseEstimator):
     self.pi_: np.ndarray of shape (n_classes)
         The estimated class probabilities. To be set in `GaussianNaiveBayes.fit`
     """
+
     def __init__(self):
         """
         Instantiate an LDA classifier
@@ -46,7 +48,35 @@ class LDA(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        raise NotImplementedError()
+        self.classes_ = np.unique(y).astype(int)
+        samples_by_class = {}
+        for i in range(len(y)):
+            if y[i] not in samples_by_class:
+                samples_by_class[y[i]] = np.array([X[i]])
+            else:
+                samples_by_class[y[i]] = np.vstack([samples_by_class[y[i]],
+                                                    np.array(X[i])])
+        self.pi_ = np.array([])
+        self.mu_ = np.array([])
+        m = len(y)
+        cov_ = None
+        for i in samples_by_class:
+            self.pi_ = np.append(self.pi_, len(samples_by_class[i]) / m)
+            if len(self.mu_) == 0:
+                self.mu_ = np.append(self.mu_, samples_by_class[i].mean(
+                    axis=0))
+            else:
+                self.mu_ = np.vstack([self.mu_, samples_by_class[i].mean(
+                    axis=0)])
+        for j in range(len(y)):
+            if cov_ is None:
+                cov_ = np.outer(X[j] - self.mu_[int(y[j])], X[j] - self.mu_[
+                    int(y[j])])
+            else:
+                cov_ += np.outer(X[j] - self.mu_[int(y[j])], X[j] - self.mu_[
+                    int(y[j])])
+        self.cov_ = cov_ / (m - len(self.classes_))
+        self._cov_inv = np.linalg.inv(self.cov_)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -62,7 +92,21 @@ class LDA(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+        likelihoods = self.likelihood(X)
+        y_pred = np.array([])
+        for sample in likelihoods:
+            max_likelihood = 0
+            pred = None
+            for label in self.classes_:
+                ind = int(label)
+                if sample[ind] > max_likelihood:
+                    max_likelihood = sample[ind]
+                    pred = label
+            y_pred = np.append(y_pred, pred)
+
+        return y_pred
+
+
 
     def likelihood(self, X: np.ndarray) -> np.ndarray:
         """
@@ -80,9 +124,25 @@ class LDA(BaseEstimator):
 
         """
         if not self.fitted_:
-            raise ValueError("Estimator must first be fitted before calling `likelihood` function")
+            raise ValueError(
+                "Estimator must first be fitted before calling `likelihood` function")
 
-        raise NotImplementedError()
+        likelihood = None
+        for sample in X:
+            sample_likelihood = np.array([])
+            for y in self.classes_:
+                ind = int(y)
+                likelihood_y = scipy.stats.multivariate_normal.pdf(
+                    sample, self.mu_[ind], self.cov_) * \
+                           self.pi_[ind]
+                sample_likelihood = np.append(sample_likelihood, likelihood_y)
+            if likelihood is None:
+                likelihood = sample_likelihood
+            else:
+                likelihood = np.vstack([likelihood, sample_likelihood])
+        return likelihood
+
+
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -101,4 +161,8 @@ class LDA(BaseEstimator):
         loss : float
             Performance under missclassification loss function
         """
-        raise NotImplementedError()
+        y_pred = self._predict(X)
+        return misclassification_error(y, y_pred)
+
+
+
