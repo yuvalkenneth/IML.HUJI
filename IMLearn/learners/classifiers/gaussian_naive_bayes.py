@@ -90,13 +90,6 @@ class GaussianNaiveBayes(BaseEstimator):
         likelihoods = self.likelihood(X)
         y_pred = np.array([])
         for sample in likelihoods:
-            # max_likelihood = 0
-            # pred = None
-            # for label in self.classes_:
-            #     ind = int(label)
-            #     if sample[ind] > max_likelihood:
-            #         max_likelihood = sample[ind]
-            #         pred = label
             pred = np.argmax(sample)
             y_pred = np.append(y_pred, pred)
         return y_pred
