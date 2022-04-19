@@ -99,7 +99,7 @@ def plot_models(X, y, gauss_pred, lda_pred, gauss_acc, lda_acc):
                                         f"LDA\naccuracy: {lda_acc}"))
     fig.add_trace(
         go.Scatter(x=X[:, 0], y=X[:, 1], mode='markers', marker=dict(
-            color=gauss_pred, symbol=y, size=7),),
+            color=gauss_pred, symbol=y, size=7)),
         row=1, col=1)
     fig.add_trace(
         go.Scatter(x=X[:, 0], y=X[:, 1], mode='markers', marker=dict(
