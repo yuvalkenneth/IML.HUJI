@@ -61,7 +61,7 @@ class GaussianNaiveBayes(BaseEstimator):
         self.gauss_param_calc(samples_by_class)
 
     def gauss_param_calc(self, samples_by_class):
-        for i in samples_by_class:
+        for i in self.classes_:
             if self.mu_ is None:
                 self.mu_ = np.array(samples_by_class[i].mean(axis=0))
             else:
@@ -90,14 +90,16 @@ class GaussianNaiveBayes(BaseEstimator):
         likelihoods = self.likelihood(X)
         y_pred = np.array([])
         for sample in likelihoods:
-            max_likelihood = 0
-            pred = None
-            for label in self.classes_:
-                ind = int(label)
-                if sample[ind] > max_likelihood:
-                    max_likelihood = sample[ind]
-                    pred = label
+            # max_likelihood = 0
+            # pred = None
+            # for label in self.classes_:
+            #     ind = int(label)
+            #     if sample[ind] > max_likelihood:
+            #         max_likelihood = sample[ind]
+            #         pred = label
+            pred = np.argmax(sample)
             y_pred = np.append(y_pred, pred)
+        return y_pred
 
     def likelihood(self, X: np.ndarray) -> np.ndarray:
         """

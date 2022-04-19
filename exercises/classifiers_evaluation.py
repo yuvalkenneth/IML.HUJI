@@ -3,9 +3,12 @@ from typing import Tuple
 
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 import plotly.io as pio
+from plotly.subplots import make_subplots
 
-from IMLearn.learners.classifiers import Perceptron, GaussianNaiveBayes,LDA
+from IMLearn.learners.classifiers import Perceptron, GaussianNaiveBayes, LDA
+from IMLearn.metrics import accuracy
 
 pio.templates.default = "simple_white"
 sys.path.append(r"C:\Users\yuval\Desktop\github\IML.HUJI\datasets")
@@ -70,30 +73,43 @@ def compare_gaussian_classifiers():
     """
     for f in ["gaussian1.npy", "gaussian2.npy"]:
         # Load dataset
-        raise NotImplementedError()
-
+        data = np.load(f)
+        X = data[:, 0:-1]
+        y = data[:, -1]
         # Fit models and predict over training set
-        raise NotImplementedError()
+        gaussian = GaussianNaiveBayes()
+        gaussian.fit(X, y)
+        gaussian_pred = gaussian._predict(X)
+        gaussian_accuracy = accuracy(y, gaussian_pred)
+        linear_discriminant = LDA()
+        linear_discriminant.fit(X, y)
+        lda_pred = linear_discriminant._predict(X)
+        lda_accuracy = accuracy(y, lda_pred)
 
         # Plot a figure with two suplots, showing the Gaussian Naive Bayes predictions on the left and LDA predictions
         # on the right. Plot title should specify dataset used and subplot titles should specify algorithm and accuracy
-        raise NotImplementedError()
+        plot_models(X, y, gaussian_pred, lda_pred, gaussian_accuracy,
+                    lda_accuracy)
+
+
+def plot_models(X, y, gauss_pred, lda_pred, gauss_acc, lda_acc):
+    fig = make_subplots(rows=1, cols=2,
+                        subplot_titles=(f"gaussian naive bayes\naccuracy:"
+                                        f"{gauss_acc}",
+                                        f"LDA\naccuracy: {lda_acc}"))
+    fig.add_trace(
+        go.Scatter(x=X[:, 0], y=X[:, 1], mode='markers', marker=dict(
+            color=gauss_pred, symbol=y, size=7),),
+        row=1, col=1)
+    fig.add_trace(
+        go.Scatter(x=X[:, 0], y=X[:, 1], mode='markers', marker=dict(
+            color=lda_pred, symbol=y, size=7)), row=1, col=2)
+    fig.update_layout(height=800, width=1500,
+                      title_text="Naive gaussian bayes VS LDA")
+    fig.show()
 
 
 if __name__ == '__main__':
     np.random.seed(0)
     # run_perceptron()
-    # compare_gaussian_classifiers()
-    new = LDA()
-    data = np.load(r"gaussian1.npy")
-    new.fit(data[:,0:-1], data[:,-1])
-    y = new._predict(data[:,0:-1])
-    # z = lda()
-    # new.loss(data[:,0:-1], data[:,-1])
-    # z.fit(data[:,0:-1], data[:,-1])
-    # k = z.predict_proba(data[:,0:-1])
-    # test = GaussianNaiveBayes()
-    # test.fit(data[:, 0:-1], data[:, -1])
-    # y = test.likelihood(data[:, 0:-1])
-
-    print(5)
+    compare_gaussian_classifiers()
