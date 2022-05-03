@@ -35,18 +35,13 @@ def split_train_test(X: pd.DataFrame, y: pd.Series,
         Responses of test samples
 
     """
-    # X['price'] = y
     X = X.join(y)
     train = X.sample(frac=train_proportion)
     test = X.drop(train.index)
     train_y = train.iloc[:, -1]
-    # train_x = train.drop(labels=['price'], axis=1)
     train_x = train.iloc[:, :-1]
-    # test_y = test.price
     test_y = test.iloc[:, -1]
-    # test_x = test.drop(labels=['price'], axis=1)
     test_x = test.iloc[:, :-1]
-    # X.drop(labels=['price'], axis=1, inplace=True)
     X = X.iloc[:, :-1]
     return train_x, train_y, test_x, test_y
 
