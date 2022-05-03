@@ -3,8 +3,8 @@ from typing import NoReturn
 import numpy as np
 import scipy.stats
 
+from IMLearn.base import BaseEstimator
 from IMLearn.metrics.loss_functions import misclassification_error
-from ...base import BaseEstimator
 
 
 class GaussianNaiveBayes(BaseEstimator):
@@ -147,3 +147,5 @@ class GaussianNaiveBayes(BaseEstimator):
         """
         y_pred = self._predict(X)
         return misclassification_error(y, y_pred)
+
+

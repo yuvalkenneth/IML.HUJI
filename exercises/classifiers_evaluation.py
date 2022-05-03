@@ -11,6 +11,9 @@ from plotly.subplots import make_subplots
 from IMLearn.learners.classifiers import Perceptron, GaussianNaiveBayes, LDA
 from IMLearn.metrics import accuracy
 
+PERCEPTRON_TITILE = "perceptron loss as a function of " \
+    "iterations"
+pio.renderers.default = "browser"
 pio.templates.default = "simple_white"
 sys.path.append(r"C:\Users\yuval\Desktop\github\IML.HUJI\datasets")
 
@@ -89,7 +92,7 @@ def run_perceptron():
         loss = report.loss
 
         # Plot figure
-        px.line(y=loss).show()
+        px.line(y=loss, title=PERCEPTRON_TITILE).show()
 
 
 def compare_gaussian_classifiers():
@@ -162,5 +165,5 @@ def add_x_mark(mu):
 
 if __name__ == '__main__':
     np.random.seed(0)
-    # run_perceptron()
+    run_perceptron()
     compare_gaussian_classifiers()
