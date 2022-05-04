@@ -1,12 +1,10 @@
 import numpy as np
 from typing import Tuple
-from IMLearn.learners.metalearners.adaboost import AdaBoost
+from IMLearn.metalearners.adaboost import AdaBoost
 from IMLearn.learners.classifiers import DecisionStump
 from utils import *
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-
-
 def generate_data(n: int, noise_ratio: float) -> Tuple[np.ndarray, np.ndarray]:
     """
     Generate a dataset in R^2 of specified size
@@ -38,24 +36,41 @@ def generate_data(n: int, noise_ratio: float) -> Tuple[np.ndarray, np.ndarray]:
     return X, y
 
 
-def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=500):
-    (train_X, train_y), (test_X, test_y) = generate_data(train_size, noise), generate_data(test_size, noise)
+def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=700,
+                              test_size=300 ):
+    (train_X, train_y), (test_X, test_y) = generate_data(train_size,
+                                                         noise), generate_data(
+        test_size, noise)
 
     # Question 1: Train- and test errors of AdaBoost in noiseless case
-    raise NotImplementedError()
+    ada_model = AdaBoost(wl=lambda: DecisionStump(), iterations=60)
+    ada_model.fit(train_X, train_y)
+
+    train_loss = []
+    test_loss = []
+    for i in range(1, 61):
+        train_loss.append(ada_model.partial_loss(train_X, train_y, i))
+        test_loss.append(ada_model.partial_loss(test_X, test_y, i))
+    fig1 = go.Figure()
+    fig1.add_trace(go.Line(x=list(range(1, 251)), y=train_loss))
+    fig1.add_trace(go.Line(x=list(range(1, 251)), y=test_loss))
+    fig1.show()
 
     # Question 2: Plotting decision surfaces
-    T = [5, 50, 100, 250]
-    lims = np.array([np.r_[train_X, test_X].min(axis=0), np.r_[train_X, test_X].max(axis=0)]).T + np.array([-.1, .1])
-    raise NotImplementedError()
-
-    # Question 3: Decision surface of best performing ensemble
-    raise NotImplementedError()
-
-    # Question 4: Decision surface with weighted samples
-    raise NotImplementedError()
+    # T = [5, 50, 100, 250]
+    # lims = np.array([np.r_[train_X, test_X].min(axis=0),
+    #                  np.r_[train_X, test_X].max(axis=0)]).T + np.array(
+    #     [-.1, .1])
+    # raise NotImplementedError()
+    #
+    # # Question 3: Decision surface of best performing ensemble
+    # raise NotImplementedError()
+    #
+    # # Question 4: Decision surface with weighted samples
+    # raise NotImplementedError()
+    #
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    raise NotImplementedError()
+    fit_and_evaluate_adaboost(0)

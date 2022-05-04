@@ -3,7 +3,7 @@ from typing import Callable, NoReturn
 import numpy as np
 
 from IMLearn.metrics.loss_functions import misclassification_error
-from ...base import BaseEstimator
+from ..base import BaseEstimator
 
 
 class AdaBoost(BaseEstimator):
@@ -56,17 +56,17 @@ class AdaBoost(BaseEstimator):
         self.D_ = [1 / len(y) for i in range(len(y))]
         for i in range(self.iterations_):
             model = self.wl_()
-            model.fit(X, y)
-            self.models_.append(model)
+            model.fit(X, y* self.D_)
             pred = model.predict(X)
+            self.models_.append(model)
             eps = 0
             for j in range(len(y)):
                 if np.sign(pred[j]) != np.sign(y[j]):
                     eps += self.D_[j]
-            self.weights_.append(np.log((1 / eps) - 1) / 2)
-            self.D_ = np.exp(
-                -y * np.array(self.weights_[-1]) * pred) * np.array(self.D_)
-            self.D_ = np.array(self.D_) / np.sum(self.D_)
+            self.weights_.append(np.log(((1-eps) / eps)) / 2)
+            self.D_ = list(np.exp(
+                -y * np.array(self.weights_[-1]) * pred) * np.array(self.D_))
+            self.D_ = list(np.array(self.D_) / np.sum(self.D_))
 
     def _predict(self, X):
         """

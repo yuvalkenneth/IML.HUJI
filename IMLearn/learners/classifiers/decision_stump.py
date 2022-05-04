@@ -46,14 +46,17 @@ class DecisionStump(BaseEstimator):
         current_best = ()
         for j in range(np.shape(X)[1]):
             for i in [-1, 1]:
-                best = self._find_threshold(X[:, j], y, i)
                 if not current_best:
-                    current_best = best
+                    self.j_ = j
+                    current_best = self._find_threshold(X[:, j], y, i)
+                    self.sign_ = i
+                    self.threshold_ = current_best[0]
                 else:
+                    best = self._find_threshold(X[:, j], y, i)
                     if best[1] < current_best[1]:
                         current_best = best
                         self.sign_ = i
-                        self.j = j
+                        self.j_ = j
                         self.threshold_ = best[0]
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
@@ -118,20 +121,26 @@ class DecisionStump(BaseEstimator):
         labels = labels[i]
         pred_labels = np.array([sign if values[k] >= (values[0] - 1) else -sign
                                 for k in range(len(values))])
-        err = misclassification_error(labels, pred_labels)
+        err = weighted_misclassification(labels, pred_labels)
         best_err = (values[0] - 1, err)
         for j in range(len(values) - 1):
-            thresh = (values[j] + values[j + 1]) / 2
-            pred_labels = np.array([sign if values[k] >= thresh else -sign
-                                    for k in range(len(values))])
-            err = misclassification_error(labels, pred_labels)
-            best_err = (thresh, err) if err < best_err[1] else best_err
+            thresh = ((values[j] + values[j + 1]) / 2)
+
+            pred_labels = []
+            for k in range(len(values)):
+                if values[k] >= thresh:
+                    pred_labels.append(sign)
+                else:
+                    pred_labels.append(-sign)
+            err = weighted_misclassification(labels, pred_labels)
+            if err < best_err[1]:
+                best_err = (thresh, err)
         pred_labels = np.array([sign if values[k] >= (values[len(values) - 1]
                                                       + 1) else -sign
                                 for k in range(len(values))])
-        err = misclassification_error(labels, pred_labels)
-        best_err = (values[len(values) - 1] + 1, err) if err < best_err[1] \
-            else best_err
+        err = weighted_misclassification(labels, pred_labels)
+        if err < best_err[1]:
+            best_err = (values[len(values) - 1] + 1, err)
         return best_err
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
@@ -153,3 +162,12 @@ class DecisionStump(BaseEstimator):
         """
         y_pred = self._predict(X)
         return misclassification_error(y, y_pred)
+
+
+
+def weighted_misclassification(y,y_pred):
+    err = 0
+    for i in range(len(y)):
+        if y[i] * y_pred[i] < 0:
+            err += abs(y[i])
+    return err
