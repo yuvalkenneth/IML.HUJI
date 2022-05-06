@@ -61,10 +61,11 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000,
     fig1.show()
 
     # Question 2: Plotting decision surfaces
-    # T = [5, 50, 100, 250]
-    # lims = np.array([np.r_[train_X, test_X].min(axis=0),
-    #                  np.r_[train_X, test_X].max(axis=0)]).T + np.array(
-    #     [-.1, .1])
+    T = [5, 50, 100, 250]
+    lims = np.array([np.r_[train_X, test_X].min(axis=0),
+                     np.r_[train_X, test_X].max(axis=0)]).T + np.array(
+        [-.1, .1])
+    model-predictions = [ada_model.partial_predict(test_X, t) for t in T]
     # raise NotImplementedError()
     #
     # # Question 3: Decision surface of best performing ensemble
