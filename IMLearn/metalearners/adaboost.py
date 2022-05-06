@@ -56,7 +56,7 @@ class AdaBoost(BaseEstimator):
         self.D_ = [1 / len(y) for i in range(len(y))]
         for i in range(self.iterations_):
             model = self.wl_()
-            model.fit(X, y* self.D_)
+            model.fit(X, y * self.D_)
             pred = model.predict(X)
             self.models_.append(model)
             eps = 0
