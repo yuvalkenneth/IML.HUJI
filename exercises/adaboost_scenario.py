@@ -2,7 +2,10 @@ from typing import Tuple
 
 from IMLearn.learners.classifiers import DecisionStump
 from IMLearn.metalearners.adaboost import AdaBoost
+from IMLearn.metrics import accuracy
 from utils import *
+
+pio.renderers.default = "browser"
 
 
 def generate_data(n: int, noise_ratio: float) -> Tuple[np.ndarray, np.ndarray]:
@@ -65,17 +68,80 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000,
     lims = np.array([np.r_[train_X, test_X].min(axis=0),
                      np.r_[train_X, test_X].max(axis=0)]).T + np.array(
         [-.1, .1])
-    model-predictions = [ada_model.partial_predict(test_X, t) for t in T]
-    # raise NotImplementedError()
-    #
-    # # Question 3: Decision surface of best performing ensemble
-    # raise NotImplementedError()
-    #
+    model_predictions = [ada_model.partial_predict(test_X, t) for t in T]
+    fig2 = make_subplots(rows=2, cols=3,
+                         subplot_titles=[rf"$\text{{{t} learners}}$" for
+                                         t in T],
+                         horizontal_spacing=0.01, vertical_spacing=.03)
+    symbols = np.array(["circle", "x"])
+    y = np.where(test_y == 1, 1, 0)
+    for i, m in enumerate(T):
+        fig2.add_traces(
+            [decision_surface(lambda x: ada_model.partial_predict(x,
+                                                                  T=m),
+                              lims[0], lims[1], showscale=False),
+             go.Scatter(x=test_X[:, 0], y=test_X[:, 1],
+                        mode="markers",
+                        showlegend=False,
+                        marker=dict(color=y, symbol=symbols[y],
+                                    colorscale=[custom[0],
+                                                custom[-1]],
+                                    line=dict(color="black",
+                                              width=1)))],
+            rows=(i // 3) + 1, cols=(i % 3) + 1)
+
+    fig2.update_layout(
+        title=rf"$\text{{Decision Boundaries Of Models with [5, 50, 100," +
+              "250] learners}}$ "
+        , margin=dict(t=100)).update_xaxes(visible=False).update_yaxes(
+        visible=False)
+    fig2.show()
+
+    # # Question 3: Decision surface of best performing
+    best_ensemble = int(np.argmin(test_loss))
+    acc = accuracy(ada_model.partial_predict(test_X, best_ensemble),
+                   test_y)
+    fig3 = go.Figure().add_traces([decision_surface(
+        lambda x: ada_model.partial_predict(x, T=best_ensemble),
+        lims[0], lims[1], showscale=False),
+        go.Scatter(x=test_X[:, 0], y=test_X[:, 1],
+                   mode="markers",
+                   showlegend=False,
+                   marker=dict(color=y,
+                               symbol=symbols[y],
+                               colorscale=[
+                                   custom[0],
+                                   custom[-1]],
+                               line=dict(
+                                   color="black",
+                                   width=1)))])
+    fig3.update_layout(title=f"best ensemble of {best_ensemble + 1} "
+                             f"learners, with {acc} accuracy")
+    fig3.show()
+
     # # Question 4: Decision surface with weighted samples
     # raise NotImplementedError()
-    #
+    normal = 5 * ada_model.D_ / (np.max(ada_model.D_))
+    fig4 = go.Figure().add_traces([decision_surface(
+        lambda x: ada_model.partial_predict(x, T=best_ensemble),
+        lims[0], lims[1], showscale=False),
+        go.Scatter(x=train_X[:, 0], y=train_X[:, 1],
+                   mode="markers",
+                   showlegend=False,
+                   marker=dict(color=y, size=normal,
+                               symbol=symbols[y],
+                               colorscale=[
+                                   custom[0],
+                                   custom[-1]],
+                               line=dict(
+                                   color="black",
+                                   width=1)))])
+    fig4.update_layout(title="train data prediction proportional to point"
+                             "weight")
+    fig4.show()
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    fit_and_evaluate_adaboost(0, 50,2500,250)
+    fit_and_evaluate_adaboost(0, 250, 5000, 500)
+    fit_and_evaluate_adaboost(0.4)

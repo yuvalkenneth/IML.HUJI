@@ -86,7 +86,7 @@ class DecisionStump(BaseEstimator):
         return y
 
     def _find_threshold(self, values: np.ndarray, labels: np.ndarray,
-                        sign: int) -> Tuple[float, float]:
+                        sign: int) -> Tuple[float | Any, ndarray]:
         """
         Given a feature vector and labels, find a threshold by which to perform a split
         The threshold is found according to the value minimizing the misclassification
@@ -122,11 +122,11 @@ class DecisionStump(BaseEstimator):
         pred_labels = np.array([sign] * len(values))
         err = np.sum(abs(labels[np.sign(labels) != pred_labels]))
         best_err = (values[0] - 1, err)
-        for j in range(len(values) - 1):
+        for j in range(len(values) - 1): # o(n)
             thresh = ((values[j] + values[j + 1]) / 2)
             pred_labels = np.array([-sign] * (j + 1) + [sign] * (len(values)
                                                                  - j - 1))
-            err = np.sum(abs(labels[np.sign(labels) != pred_labels]))
+            err = np.sum(abs(labels[np.sign(labels) != pred_labels])) # o(1)
             if err < best_err[1]:
                 best_err = (thresh, err)
 
@@ -157,9 +157,3 @@ class DecisionStump(BaseEstimator):
         return misclassification_error(y, y_pred)
 
 
-def weighted_misclassification(y, y_pred):
-    err = 0
-    for i in range(len(y)):
-        if y[i] * y_pred[i] < 0:
-            err += abs(y[i])
-    return err
