@@ -1,5 +1,7 @@
 from typing import Tuple
 
+import numpy as np
+
 from IMLearn.learners.classifiers import DecisionStump
 from IMLearn.metalearners.adaboost import AdaBoost
 from IMLearn.metrics import accuracy
@@ -98,7 +100,7 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000,
     fig2.show()
 
     # # Question 3: Decision surface of best performing
-    best_ensemble = int(np.argmin(test_loss))
+    best_ensemble = T[int(np.argmin([test_loss[i-1] for i in T]))]
     acc = accuracy(ada_model.partial_predict(test_X, best_ensemble),
                    test_y)
     fig3 = go.Figure().add_traces([decision_surface(
@@ -123,7 +125,7 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000,
     # raise NotImplementedError()
     normal = 5 * ada_model.D_ / (np.max(ada_model.D_))
     fig4 = go.Figure().add_traces([decision_surface(
-        lambda x: ada_model.partial_predict(x, T=best_ensemble),
+        lambda x: ada_model.partial_predict(x, T=250),
         lims[0], lims[1], showscale=False),
         go.Scatter(x=train_X[:, 0], y=train_X[:, 1],
                    mode="markers",

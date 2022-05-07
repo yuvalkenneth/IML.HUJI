@@ -124,12 +124,18 @@ class DecisionStump(BaseEstimator):
         best_err = (values[0] - 1, err)
         for j in range(len(values) - 1): # o(n)
             thresh = ((values[j] + values[j + 1]) / 2)
-            pred_labels = np.array([-sign] * (j + 1) + [sign] * (len(values)
-                                                                 - j - 1))
-            err = np.sum(abs(labels[np.sign(labels) != pred_labels])) # o(1)
+            # pred_labels = np.array([-sign] * (j + 1) + [sign] * (len(values)
+            #                                                      - j - 1))
+            pred_labels[j] = -sign
+            if pred_labels[j] == np.sign(labels[j]): #if the current index
+                # is labeled properly after thresh change, it is no longer
+                # part of the error
+                err -= abs(labels[j])
+            else:
+                err += abs(labels[j])
+            # err = np.sum(abs(labels[np.sign(labels) != pred_labels])) # o(1)
             if err < best_err[1]:
                 best_err = (thresh, err)
-
         pred_labels = np.array([sign] * len(values))
         err = np.sum(abs(labels[np.sign(labels) != pred_labels]))
         if err < best_err[1]:
