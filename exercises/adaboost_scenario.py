@@ -117,7 +117,7 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000,
                                line=dict(
                                    color="black",
                                    width=1)))])
-    fig3.update_layout(title=f"best ensemble of {best_ensemble + 1} "
+    fig3.update_layout(title=f"best ensemble of {best_ensemble} "
                              f"learners, with {acc} accuracy")
     fig3.show()
 

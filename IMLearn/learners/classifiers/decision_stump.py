@@ -136,7 +136,7 @@ class DecisionStump(BaseEstimator):
             # err = np.sum(abs(labels[np.sign(labels) != pred_labels])) # o(1)
             if err < best_err[1]:
                 best_err = (thresh, err)
-        pred_labels = np.array([sign] * len(values))
+        pred_labels = np.array([-sign] * len(values))
         err = np.sum(abs(labels[np.sign(labels) != pred_labels]))
         if err < best_err[1]:
             best_err = (values[len(values) - 1] + 1, err)
