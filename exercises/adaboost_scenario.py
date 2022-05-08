@@ -1,11 +1,22 @@
 from typing import Tuple
 
-import numpy as np
-
 from IMLearn.learners.classifiers import DecisionStump
 from IMLearn.metalearners.adaboost import AdaBoost
 from IMLearn.metrics import accuracy
 from utils import *
+
+WEIGHTD_DATA_TITLE = "train data prediction proportional to point" \
+    "weight"
+
+DECISION_BOUNDARIES_TITLE = rf"$\text{{Decision Boundaries Of Models with " \
+                            "[5, 50, 100," + "250] learners}}$ "
+
+LOSSES_OF_LEARNERS = "train and test loss as a function of fitted " \
+                     "learners"
+
+TEST_LOSS = "test loss"
+
+TRAIN_LOSS = "train loss"
 
 pio.renderers.default = "browser"
 
@@ -59,10 +70,11 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000,
     fig1 = go.Figure()
     fig1.add_trace(
         go.Line(x=list(range(1, n_learners)), y=train_loss[:n_learners],
-                name="train loss"))
+                name=TRAIN_LOSS))
     fig1.add_trace(
         go.Line(x=list(range(1, n_learners)), y=test_loss[:n_learners],
-                name="test loss"))
+                name=TEST_LOSS))
+    fig1.update_layout(title=LOSSES_OF_LEARNERS)
     fig1.show()
 
     # Question 2: Plotting decision surfaces
@@ -93,14 +105,13 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000,
             rows=(i // 3) + 1, cols=(i % 3) + 1)
 
     fig2.update_layout(
-        title=rf"$\text{{Decision Boundaries Of Models with [5, 50, 100," +
-              "250] learners}}$ "
+        title=DECISION_BOUNDARIES_TITLE
         , margin=dict(t=100)).update_xaxes(visible=False).update_yaxes(
         visible=False)
     fig2.show()
 
     # # Question 3: Decision surface of best performing
-    best_ensemble = T[int(np.argmin([test_loss[i-1] for i in T]))]
+    best_ensemble = T[int(np.argmin([test_loss[i - 1] for i in T]))]
     acc = accuracy(ada_model.partial_predict(test_X, best_ensemble),
                    test_y)
     fig3 = go.Figure().add_traces([decision_surface(
@@ -123,7 +134,7 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000,
 
     # # Question 4: Decision surface with weighted samples
     # raise NotImplementedError()
-    normal = 5 * ada_model.D_ / (np.max(ada_model.D_))
+    normal = ada_model.D_ / np.max(ada_model.D_) * 5
     fig4 = go.Figure().add_traces([decision_surface(
         lambda x: ada_model.partial_predict(x, T=250),
         lims[0], lims[1], showscale=False),
@@ -138,8 +149,7 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000,
                                line=dict(
                                    color="black",
                                    width=1)))])
-    fig4.update_layout(title="train data prediction proportional to point"
-                             "weight")
+    fig4.update_layout(title=WEIGHTD_DATA_TITLE)
     fig4.show()
 
 
