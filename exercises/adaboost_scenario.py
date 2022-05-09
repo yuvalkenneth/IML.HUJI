@@ -111,11 +111,11 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000,
     fig2.show()
 
     # # Question 3: Decision surface of best performing
-    best_ensemble = T[int(np.argmin([test_loss[i - 1] for i in T]))]
-    acc = accuracy(ada_model.partial_predict(test_X, best_ensemble),
+    best_ensemble = int(np.argmin(test_loss))
+    acc = accuracy(ada_model.partial_predict(test_X, best_ensemble + 1),
                    test_y)
     fig3 = go.Figure().add_traces([decision_surface(
-        lambda x: ada_model.partial_predict(x, T=best_ensemble),
+        lambda x: ada_model.partial_predict(x, T=best_ensemble + 1),
         lims[0], lims[1], showscale=False),
         go.Scatter(x=test_X[:, 0], y=test_X[:, 1],
                    mode="markers",
