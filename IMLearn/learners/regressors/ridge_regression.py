@@ -1,7 +1,11 @@
 from __future__ import annotations
+
 from typing import NoReturn
-from ...base import BaseEstimator
+
 import numpy as np
+
+from IMLearn.metrics.loss_functions import mean_square_error
+from ...base import BaseEstimator
 
 
 class RidgeRegression(BaseEstimator):
@@ -11,7 +15,8 @@ class RidgeRegression(BaseEstimator):
     Solving Ridge Regression optimization problem
     """
 
-    def __init__(self, lam: float, include_intercept: bool = True) -> RidgeRegression:
+    def __init__(self, lam: float,
+                 include_intercept: bool = True) -> RidgeRegression:
         """
         Initialize a ridge regression model
 
@@ -32,7 +37,6 @@ class RidgeRegression(BaseEstimator):
             Coefficients vector fitted by linear regression. To be set in
             `LinearRegression.fit` function.
         """
-
 
         """
         Initialize a ridge regression model
@@ -59,7 +63,12 @@ class RidgeRegression(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.include_intercept_`
         """
-        raise NotImplementedError()
+        if self.include_intercept_:
+            X = np.insert(X, 0, np.ones(np.shape(X)[0]), axis=1)
+        lambda_mat = np.identity(len(X[0])) * self.lam_
+        X = np.vstack((X, lambda_mat))
+        y = np.concatenate((y, np.zeros(len(X[0]))))
+        self.coefs_ = np.linalg.pinv(X) @ y
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -75,7 +84,9 @@ class RidgeRegression(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+        if self.include_intercept_:
+            X = np.insert(X, 0, np.ones(np.shape(X)[0]), axis=1)
+        return X @ self.coefs_
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -94,4 +105,6 @@ class RidgeRegression(BaseEstimator):
         loss : float
             Performance under MSE loss function
         """
-        raise NotImplementedError()
+        y_pred = self._predict(X)
+        return mean_square_error(y, y_pred) + (
+            np.linalg.norm(self.coefs_)) ** 2
