@@ -65,7 +65,7 @@ class RidgeRegression(BaseEstimator):
         """
         if self.include_intercept_:
             X = np.insert(X, 0, np.ones(np.shape(X)[0]), axis=1)
-        lambda_mat = np.identity(len(X[0])) * self.lam_
+        lambda_mat = np.identity(len(X[0])) * (self.lam_ ** 0.5)
         X = np.vstack((X, lambda_mat))
         y = np.concatenate((y, np.zeros(len(X[0]))))
         self.coefs_ = np.linalg.pinv(X) @ y
@@ -107,4 +107,4 @@ class RidgeRegression(BaseEstimator):
         """
         y_pred = self._predict(X)
         return mean_square_error(y, y_pred) + (
-            np.linalg.norm(self.coefs_)) ** 2
+                self.lam_ * (np.linalg.norm(self.coefs_)) ** 2)

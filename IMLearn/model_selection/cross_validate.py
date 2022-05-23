@@ -40,7 +40,7 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
     validation_score: float
         Average validation score over folds
     """
-    joined_data = np.vstack((X, y)).T
+    joined_data = np.vstack((X.T, y)).T
     folds = [i for i in np.array_split(joined_data, cv)]
     train_score, validation_score = [], []
     for i in range(len(folds)):

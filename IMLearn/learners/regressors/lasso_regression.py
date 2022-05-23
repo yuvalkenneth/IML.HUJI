@@ -107,6 +107,7 @@ class LassoRegression(BaseEstimator):
         if self.include_intercept_:
             X = np.insert(X, 0, np.ones(np.shape(X)[0]), axis=1)
         return X @ self.coefs_
+        # return self.model.predict(X)
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -126,4 +127,5 @@ class LassoRegression(BaseEstimator):
             Performance under MSE loss function
         """
         y_pred = self._predict(X)
-        return mean_square_error(y, y_pred) + np.linalg.norm(self.coefs_)
+        return mean_square_error(y, y_pred) + (self.lam_ * np.linalg.norm(
+            self.coefs_, ord=1))
