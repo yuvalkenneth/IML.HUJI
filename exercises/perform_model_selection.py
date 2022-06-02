@@ -12,8 +12,6 @@ from IMLearn.model_selection.cross_validate import cross_validate
 from IMLearn.utils import split_train_test
 from utils import *
 
-SAMPEL_SIZE = 100
-
 MAX_VAL = 2
 
 MIN_VAL = -1.2
@@ -61,18 +59,26 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
         error.append(cross_validate(PolynomialFitting(k), train_X, train_y,
                                     mean_square_error))
     val_err = [err[1] for err in error]
+    train_err = [err[0] for err in error]
     fig2 = go.Figure()
-    fig2.add_trace(go.Scatter(x=list(range(11)), y=val_err, mode="markers"))
-    fig2.update_layout(title="validation error as a function of polynomial "
-                             "degree", xaxis_title= "polynomial degree",
-                       yaxis_title="validation err")
+    fig2.add_trace(go.Scatter(x=list(range(11)), y=val_err,
+                              mode="markers+lines", marker=dict(
+            color='black'), name="val error"))
+    fig2.add_trace(go.Scatter(x=list(range(11)), y=train_err,
+                              mode="markers+lines", marker=dict(
+            color="green") ,name="train err"))
+    fig2.update_layout(title="validation and train error as a function of "
+                             "polynomial "
+                             "degree", xaxis_title="polynomial degree",
+                       yaxis_title="error")
     fig2.show()
     # Question 3 - Using best value of k, fit a k-degree polynomial model and report test error
     best_k = np.argmin([err[1] for err in error])
+    print(error[best_k])
     model = PolynomialFitting(int(best_k))
     model.fit(train_X, train_y)
     test_err = model.loss(test_X, test_y)
-    print(3)
+    print(test_err)
 
 
 def select_regularization_parameter(n_samples: int = 50,
@@ -92,14 +98,7 @@ def select_regularization_parameter(n_samples: int = 50,
     # Question 6 - Load diabetes dataset and split into training and testing portions
     data = load_diabetes()
     X, y = data.data, data.target
-    train_X, train_y, test_X, test_y = split_train_test(pd.DataFrame(X),
-                                                        pd.Series(
-                                                            y).rename(
-                                                            "labels"),
-                                                        50 / len(X))
-    train_X, train_y, test_X, test_y = np.array(train_X), np.array(train_y), \
-                                       np.array(test_X), np.array(test_y)
-
+    train_X, train_y, test_X, test_y = X[:50], y[:50], X[50:], y[50:]
     # Question 7 - Perform CV for different values of the regularization parameter for Ridge and Lasso regressions
     ridge_params = np.linspace(0, 1, n_evaluations)
     lasso_params = np.linspace(0, 1, n_evaluations)
@@ -121,6 +120,8 @@ def select_regularization_parameter(n_samples: int = 50,
     fig3.add_trace(go.Scatter(x=ridge_params, y=[err[1] for err in ridge_errs],
                               mode="markers+lines", marker=dict(color='red'),
                               name="validation error"))
+    fig3.update_layout(title="ridge train and validation errors a function "
+                             "of lambda")
     fig3.show()
     fig4 = go.Figure()
     fig4.add_trace(go.Scatter(x=lasso_params, y=[err[0] for err in lasso_errs],
@@ -129,6 +130,8 @@ def select_regularization_parameter(n_samples: int = 50,
     fig4.add_trace(go.Scatter(x=lasso_params, y=[err[1] for err in lasso_errs],
                               mode="markers+lines", marker=dict(color='red'),
                               name="validation error"))
+    fig4.update_layout(title="lasso train and validation errors a function "
+                             "of lambda")
     fig4.show()
 
     # Question 8 - Compare best Ridge model, best Lasso model and Least Squares model
@@ -144,10 +147,14 @@ def select_regularization_parameter(n_samples: int = 50,
     ridge_test_err = mean_square_error(test_y, best_ridge.predict(test_X))
     lasso_test_err = mean_square_error(test_y, best_lasso.predict(test_X))
 
+    for i in [best_ridge_lam, best_lasso_lam, linear_test_err, ridge_test_err
+        , linear_test_err]:
+        print(print(i))
+
 
 if __name__ == '__main__':
     np.random.seed(0)
     select_polynomial_degree(100, 5)
-    # select_polynomial_degree(100, 0)
-    # select_polynomial_degree(1500, 10)
+    select_polynomial_degree(100, 0)
+    select_polynomial_degree(1500, 10)
     select_regularization_parameter()
