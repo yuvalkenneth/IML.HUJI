@@ -4,7 +4,8 @@ from sklearn.datasets import load_diabetes
 
 from IMLearn.desent_methods.gradient_descent import GradientDescent
 from IMLearn.learners.regressors import LinearRegression
-from IMLearn.learners.regressors.lasso_regression import LassoRegression
+# from IMLearn.learners.regressors.lasso_regression import LassoRegression
+from sklearn.linear_model import Lasso
 from IMLearn.learners.regressors.polynomial_fitting import PolynomialFitting
 from IMLearn.learners.regressors.ridge_regression import RidgeRegression
 from IMLearn.metrics.loss_functions import mean_square_error
@@ -105,8 +106,7 @@ def select_regularization_parameter(n_samples: int = 50,
     ridge_errs, lasso_errs = [], []
     for i in range(n_evaluations):
         ridge_model = RidgeRegression(float(ridge_params[i]))
-        lasso_model = LassoRegression(lasso_params[i],
-                                      optimizer=GradientDescent)
+        lasso_model = Lasso(lasso_params[i])
 
         ridge_errs.append(cross_validate(ridge_model, train_X, train_y,
                                          mean_square_error, cv=5))
@@ -138,7 +138,7 @@ def select_regularization_parameter(n_samples: int = 50,
     best_ridge_lam = ridge_params[np.argmin([err[1] for err in ridge_errs])]
     best_lasso_lam = lasso_params[np.argmin([err[1] for err in lasso_errs])]
     best_ridge = RidgeRegression(best_ridge_lam)
-    best_lasso = LassoRegression(best_lasso_lam, GradientDescent)
+    best_lasso = Lasso(best_lasso_lam)
     linear_model = LinearRegression()
     linear_model.fit(train_X, train_y)
     best_ridge.fit(train_X, train_y)
@@ -148,7 +148,7 @@ def select_regularization_parameter(n_samples: int = 50,
     lasso_test_err = mean_square_error(test_y, best_lasso.predict(test_X))
 
     for i in [best_ridge_lam, best_lasso_lam, linear_test_err, ridge_test_err
-        , linear_test_err]:
+        , lasso_test_err]:
         print(print(i))
 
 
