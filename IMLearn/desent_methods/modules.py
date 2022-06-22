@@ -179,7 +179,6 @@ class RegularizedModule(BaseModule):
     for F(w) being some fidelity function, R(w) some regularization function and lambda
     the regularization parameter
     """
-
     def __init__(self,
                  fidelity_module: BaseModule,
                  regularization_module: BaseModule,
@@ -211,7 +210,7 @@ class RegularizedModule(BaseModule):
         self.include_intercept_ = include_intercept
 
         if weights is not None:
-            self.weights(weights)
+            self.weights = weights
 
     def compute_output(self, **kwargs) -> np.ndarray:
         """
@@ -227,10 +226,8 @@ class RegularizedModule(BaseModule):
         output: ndarray of shape (1,)
             Value of function at point self.weights
         """
-        m = self.regularization_module_.compute_output()
-        if self.include_intercept_:
-            m = np.insert(m, 0, 0)
-        return self.fidelity_module_.compute_output() + self.lam_ * m
+        m = self.regularization_module_.compute_output(**kwargs)
+        return self.fidelity_module_.compute_output(**kwargs) + self.lam_ * m
 
     def compute_jacobian(self, **kwargs) -> np.ndarray:
         """
@@ -246,10 +243,10 @@ class RegularizedModule(BaseModule):
         output: ndarray of shape (n_in,)
             Derivative with respect to self.weights at point self.weights
         """
-        m = self.regularization_module_.compute_output()
+        m = self.regularization_module_.compute_jacobian(**kwargs)
         if self.include_intercept_:
             m = np.insert(m, 0, 0)
-        return self.fidelity_module_.compute_jacobian() + \
+        return self.fidelity_module_.compute_jacobian(**kwargs) + \
                (self.lam_ * m)
 
     @property
@@ -261,7 +258,7 @@ class RegularizedModule(BaseModule):
         -------
         weights: ndarray of shape (n_in, n_out)
         """
-        return self.weights
+        return self.weights_
 
     @weights.setter
     def weights(self, weights: np.ndarray) -> None:
@@ -276,10 +273,9 @@ class RegularizedModule(BaseModule):
         weights: ndarray of shape (n_in, n_out)
             Weights to set for module
         """
-        self.weights = weights
+        self.weights_ = weights
         if self.include_intercept_:
-            self.fidelity_module_.weights = self.weights
-            self.regularization_module_ = self.weights[1:]
+            self.regularization_module_.weights = weights[1:]
         else:
-            self.fidelity_module_.weights = self.weights
-            self.regularization_module_ = self.weights
+            self.regularization_module_.weights = weights
+        self.fidelity_module_.weights = weights

@@ -7,7 +7,8 @@ from sklearn.metrics import roc_curve, auc
 
 from IMLearn import BaseModule
 from IMLearn.desent_methods import GradientDescent, FixedLR, ExponentialLR
-from IMLearn.desent_methods.modules import L1, L2
+from IMLearn.desent_methods.modules import L1, L2, LogisticModule, \
+    RegularizedModule
 from IMLearn.learners.classifiers import LogisticRegression
 from IMLearn.metrics import misclassification_error
 from IMLearn.model_selection import cross_validate
@@ -241,18 +242,18 @@ def fit_logistic_regression():
                                             scoring=misclassification_error)
         train.append(cur_train)
         validate.append(cur_val)
-    # train_2, validate_2 = [], []
-    # for lam in [0.001,0.002,0.005,0.01,0.02,0.05,0.1]:
-    #     model = LogisticRegression(solver=GradientDescent(max_iter=20000,
-    #                                                         learning_rate=FixedLR(
-    #                                                             1e-4),
-    #         callback=get_gd_state_recorder_callback()[0]), penalty="l2",
-    #         lam=lam, alpha=0.5)
-    #     cur_train, cur_val = cross_validate(model, np.array(X_train),
-    #                                         np.array(y_train),
-    #                                         scoring=misclassification_error)
-    #     train_2.append(cur_train)
-    #     validate_2.append(cur_val)
+    train_2, validate_2 = [], []
+    for lam in [0.001,0.002,0.005,0.01,0.02,0.05,0.1]:
+        model = LogisticRegression(solver=GradientDescent(max_iter=20000,
+                                                            learning_rate=FixedLR(
+                                                                1e-4),
+            callback=get_gd_state_recorder_callback()[0]), penalty="l2",
+            lam=lam, alpha=0.5)
+        cur_train, cur_val = cross_validate(model, np.array(X_train),
+                                            np.array(y_train),
+                                            scoring=misclassification_error)
+        train_2.append(cur_train)
+        validate_2.append(cur_val)
     print(3)
 
 

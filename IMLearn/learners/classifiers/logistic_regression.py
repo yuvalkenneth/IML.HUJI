@@ -99,18 +99,19 @@ class LogisticRegression(BaseEstimator):
         """
         if self.include_intercept_:
             X = np.insert(X, 0, np.ones(np.shape(X)[0]), axis=1)
-
         weights = np.random.normal(size=len(X[0])) / (len(X[0]) ** 0.5)
+
+
         if self.penalty_ == "l1":
             self.model = RegularizedModule(LogisticModule(), L1(), self.lam_,
                                            include_intercept=
                                            self.include_intercept_)
-        if self.penalty_ == "l2":
+        elif self.penalty_ == "l2":
             self.model = RegularizedModule(LogisticModule(), L2(), self.lam_,
                                            include_intercept=
                                            self.include_intercept_)
         else:
-            self.model = LogisticModule(weights=weights)
+            self.model = LogisticModule()
 
         self.model.weights = weights
         self.solver_.fit(self.model, X=X, y=y)
