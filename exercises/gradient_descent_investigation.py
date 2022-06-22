@@ -204,7 +204,12 @@ def fit_logistic_regression():
     X_train, y_train, X_test, y_test = load_data()
 
     # Plotting convergence rate of logistic regression over SA heart disease data
-    unreg_model = LogisticRegression()
+    unreg_model = LogisticRegression(solver=GradientDescent(max_iter=20000,
+                                                            learning_rate=FixedLR(
+                                                                1e-4),
+                                                            callback=
+                                                            get_gd_state_recorder_callback()[
+                                                                0]))
 
     unreg_model.fit(np.array(X_train), np.array(y_train))
     y_prob = unreg_model.predict_proba(np.array(X_train))
@@ -226,8 +231,11 @@ def fit_logistic_regression():
     # of regularization parameter
     train, validate = [], []
     for lam in [0.001,0.002,0.005,0.01,0.02,0.05,0.1]:
-        model = LogisticRegression(penalty="l2",
-                                   lam=lam, alpha=0.5)
+        model = LogisticRegression(solver=GradientDescent(max_iter=20000,
+                                                            learning_rate=FixedLR(
+                                                                1e-4),
+            callback=get_gd_state_recorder_callback()[0]), penalty="l1",
+            lam=lam, alpha=0.5)
         cur_train, cur_val = cross_validate(model, np.array(X_train),
                                             np.array(y_train),
                                             scoring=misclassification_error)

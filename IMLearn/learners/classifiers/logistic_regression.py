@@ -112,7 +112,7 @@ class LogisticRegression(BaseEstimator):
         else:
             self.model = LogisticModule(weights=weights)
 
-        self.model.weights = weights )
+        self.model.weights = weights
         self.solver_.fit(self.model, X=X, y=y)
         self.coefs_ = self.model.weights
 
