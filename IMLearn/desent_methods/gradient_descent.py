@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from typing import Callable, NoReturn
+
 import numpy as np
 
 from IMLearn.base import BaseModule, BaseLR
@@ -39,12 +41,14 @@ class GradientDescent:
         Callable function receives as input any argument relevant for the current GD iteration. Arguments
         are specified in the `GradientDescent.fit` function
     """
+
     def __init__(self,
                  learning_rate: BaseLR = FixedLR(1e-3),
                  tol: float = 1e-5,
                  max_iter: int = 1000,
                  out_type: str = "last",
-                 callback: Callable[[GradientDescent, ...], None] = default_callback):
+                 callback: Callable[
+                     [GradientDescent, ...], None] = default_callback):
         """
         Instantiate a new instance of the GradientDescent class
 
@@ -119,4 +123,30 @@ class GradientDescent:
                 Euclidean norm of w^(t)-w^(t-1)
 
         """
-        raise NotImplementedError()
+        t = 1
+        avg = last = f.weights
+        best = f.weights
+        best_output = f.compute_output(X=X, y=y)
+        while t <= self.max_iter_:
+            w_t1 = f.weights - self.learning_rate_.lr_step(t=t + 1) * \
+                   f.compute_jacobian(X=X, y=y)
+            delta = np.linalg.norm(f.weights - w_t1)
+            if delta < self.tol_:
+                t -= 1
+                break
+            f.weights = w_t1
+            avg += f.weights
+            last = f.weights
+            best = best if best_output <= f.compute_output(X=X,
+                                                           y=y) else f.weights
+            self.callback_(
+                self, [f.weights, f.compute_output(X=X, y=y),
+                       f.compute_jacobian(X=X, y=y),
+                       t, self.learning_rate_.lr_step(t=t + 1), delta])
+            t += 1
+
+        if self.out_type_ == "last":
+            return last
+        if self.out_type_ == "average":
+            return avg / (t if t != 0 else 1)
+        return best

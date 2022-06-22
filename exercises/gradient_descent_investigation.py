@@ -1,14 +1,17 @@
+from typing import Tuple, List, Callable, Type
+
 import numpy as np
 import pandas as pd
-from typing import Tuple, List, Callable, Type
+import plotly.graph_objects as go
+from sklearn.metrics import roc_curve, auc
 
 from IMLearn import BaseModule
 from IMLearn.desent_methods import GradientDescent, FixedLR, ExponentialLR
 from IMLearn.desent_methods.modules import L1, L2
-from IMLearn.learners.classifiers.logistic_regression import LogisticRegression
+from IMLearn.learners.classifiers import LogisticRegression
+from IMLearn.metrics import misclassification_error
+from IMLearn.model_selection import cross_validate
 from IMLearn.utils import split_train_test
-
-import plotly.graph_objects as go
 
 
 def plot_descent_path(module: Type[BaseModule],
@@ -46,18 +49,22 @@ def plot_descent_path(module: Type[BaseModule],
     fig = plot_descent_path(IMLearn.desent_methods.modules.L1, np.ndarray([[1,1],[0,0]]))
     fig.show()
     """
+
     def predict_(w):
         return np.array([module(weights=wi).compute_output() for wi in w])
 
     from utils import decision_surface
-    return go.Figure([decision_surface(predict_, xrange=xrange, yrange=yrange, density=70, showscale=False),
-                      go.Scatter(x=descent_path[:, 0], y=descent_path[:, 1], mode="markers+lines", marker_color="black")],
+    return go.Figure([decision_surface(predict_, xrange=xrange, yrange=yrange,
+                                       density=70, showscale=False),
+                      go.Scatter(x=descent_path[:, 0], y=descent_path[:, 1],
+                                 mode="markers+lines", marker_color="black")],
                      layout=go.Layout(xaxis=dict(range=xrange),
                                       yaxis=dict(range=yrange),
                                       title=f"GD Descent Path {title}"))
 
 
-def get_gd_state_recorder_callback() -> Tuple[Callable[[], None], List[np.ndarray], List[np.ndarray]]:
+def get_gd_state_recorder_callback() -> Tuple[
+    Callable[[], None], List[np.ndarray], List[np.ndarray]]:
     """
     Callback generator for the GradientDescent class, recording the objective's value and parameters at each iteration
 
@@ -73,28 +80,93 @@ def get_gd_state_recorder_callback() -> Tuple[Callable[[], None], List[np.ndarra
     weights: List[np.ndarray]
         Recorded parameters
     """
-    raise NotImplementedError()
+    weights, values = [], []
+
+    def recorder(obj, lst):
+        weights.append(lst[0])
+        values.append(lst[1])
+
+    return recorder, weights, values
 
 
-def compare_fixed_learning_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
-                                 etas: Tuple[float] = (1, .1, .01, .001)):
-    raise NotImplementedError()
+def compare_fixed_learning_rates(
+        init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
+        etas: Tuple[float] = (1, .1, .01, .001)):
+    c1_rate = go.Figure()
+    c2_rate = go.Figure()
+    for eta in etas:
+        l1 = L1(init.copy())
+        l2 = L2(init.copy())
+        callback1, weights1, values1 = get_gd_state_recorder_callback()
+        weights1.append(init)
+        callback2, weights2, values2 = get_gd_state_recorder_callback()
+        weights2.append(init)
+        gd_l1 = GradientDescent(FixedLR(eta),
+                                callback=callback1)
+        gd_l2 = GradientDescent(FixedLR(eta),
+                                callback=callback2)
+        gd_l1.fit(l1, None, None)
+        gd_l2.fit(l2, None, None)
+        f1 = plot_descent_path(L1, np.array(weights1), title=f"L1, eta = "
+                                                             f"{eta}")
+        f1.show()
+        f2 = plot_descent_path(L2, np.array(weights2), title=f"L2, eta = "
+                                                             f"{eta}")
+        f2.show()
+        c1_rate.add_trace(go.Scatter(x=list(range(1, 1001)), y=values1,
+                                     name=f"eta = {eta}"))
+        c2_rate.add_trace(go.Scatter(x=list(range(1, 1001)), y=values2,
+                                     name=f"eta = {eta}"))
+
+    c1_rate.update_layout(title="l1 convergence rate with different fixed "
+                                "learning rate")
+    c2_rate.update_layout(title="l2 convergence rate with different fixed "
+                                "learning rate")
+    c1_rate.show()
+    c2_rate.show()
 
 
-def compare_exponential_decay_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
-                                    eta: float = .1,
-                                    gammas: Tuple[float] = (.9, .95, .99, 1)):
+def compare_exponential_decay_rates(
+        init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
+        eta: float = .1,
+        gammas: Tuple[float] = (.9, .95, .99, 1)):
     # Optimize the L1 objective using different decay-rate values of the exponentially decaying learning rate
-    raise NotImplementedError()
-
+    c_rate = go.Figure()
+    for gamma in gammas:
+        l1 = L1(init.copy())
+        callback1, weights1, values1 = get_gd_state_recorder_callback()
+        weights1.append(init)
+        gd_l1 = GradientDescent(ExponentialLR(eta, gamma),
+                                callback=callback1)
+        gd_l1.fit(l1, None, None)
+        c_rate.add_trace(go.Scatter(x=list(range(1, 1001)), y=values1,
+                                    mode="lines",
+                                    name=f'gamma = {gamma}'))
     # Plot algorithm's convergence for the different values of gamma
-    raise NotImplementedError()
-
+    c_rate.update_layout(title="L1 with different decay rates")
+    c_rate.show()
     # Plot descent path for gamma=0.95
-    raise NotImplementedError()
+
+    callback1, weights1, values1 = get_gd_state_recorder_callback()
+    weights1.append(init)
+    gd_l1 = GradientDescent(ExponentialLR(eta, .95),
+                            callback=callback1)
+    callback2, weights2, values2 = get_gd_state_recorder_callback()
+    weights2.append(init)
+    gd_l2 = GradientDescent(ExponentialLR(eta, .95),
+                            callback=callback2)
+    l1 = L1(init.copy())
+    l2 = L2(init.copy())
+    gd_l1.fit(l1, None, None)
+    gd_l2.fit(l2, None, None)
+    plot_descent_path(L1, np.array(weights1), title="l1 with gamma = "
+                                                    "0.95").show()
+    plot_descent_path(L2, np.array(weights2), title="l2 with gamma = "
+                                                    "0.95").show()
 
 
-def load_data(path: str = "../datasets/SAheart.data", train_portion: float = .8) -> \
+def load_data(path: str = "../datasets/SAheart.data",
+              train_portion: float = .8) -> \
         Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
     """
     Load South-Africa Heart Disease dataset and randomly split into a train- and test portion
@@ -123,7 +195,8 @@ def load_data(path: str = "../datasets/SAheart.data", train_portion: float = .8)
     """
     df = pd.read_csv(path)
     df.famhist = (df.famhist == 'Present').astype(int)
-    return split_train_test(df.drop(['chd', 'row.names'], axis=1), df.chd, train_portion)
+    return split_train_test(df.drop(['chd', 'row.names'], axis=1), df.chd,
+                            train_portion)
 
 
 def fit_logistic_regression():
@@ -131,15 +204,52 @@ def fit_logistic_regression():
     X_train, y_train, X_test, y_test = load_data()
 
     # Plotting convergence rate of logistic regression over SA heart disease data
-    raise NotImplementedError()
+    unreg_model = LogisticRegression()
+
+    unreg_model.fit(np.array(X_train), np.array(y_train))
+    y_prob = unreg_model.predict_proba(np.array(X_train))
+    fpr, tpr, thresholds = roc_curve(np.array(y_train), y_prob)
+
+    go.Figure(
+        data=[go.Scatter(x=[0, 1], y=[0, 1], mode="lines",
+                         line=dict(color="black", dash='dash'),
+                         name="Random Class Assignment"),
+              go.Scatter(x=fpr, y=tpr, mode='markers+lines', text=thresholds,
+                         name="", showlegend=False, marker_size=5,
+                         hovertemplate="<b>Threshold:</b>%{text:.3f}<br>FPR: %{x:.3f}<br>TPR: %{y:.3f}")],
+        layout=go.Layout(
+            title=rf"$\text{{ROC Curve Of Fitted Model - AUC}}={auc(fpr, tpr):.6f}$",
+            xaxis=dict(title=r"$\text{False Positive Rate (FPR)}$"),
+            yaxis=dict(title=r"$\text{True Positive Rate (TPR)}$"))).show()
 
     # Fitting l1- and l2-regularized logistic regression models, using cross-validation to specify values
     # of regularization parameter
-    raise NotImplementedError()
+    train, validate = [], []
+    for lam in [0.001,0.002,0.005,0.01,0.02,0.05,0.1]:
+        model = LogisticRegression(penalty="l2",
+                                   lam=lam, alpha=0.5)
+        cur_train, cur_val = cross_validate(model, np.array(X_train),
+                                            np.array(y_train),
+                                            scoring=misclassification_error)
+        train.append(cur_train)
+        validate.append(cur_val)
+    # train_2, validate_2 = [], []
+    # for lam in [0.001,0.002,0.005,0.01,0.02,0.05,0.1]:
+    #     model = LogisticRegression(solver=GradientDescent(max_iter=20000,
+    #                                                         learning_rate=FixedLR(
+    #                                                             1e-4),
+    #         callback=get_gd_state_recorder_callback()[0]), penalty="l2",
+    #         lam=lam, alpha=0.5)
+    #     cur_train, cur_val = cross_validate(model, np.array(X_train),
+    #                                         np.array(y_train),
+    #                                         scoring=misclassification_error)
+    #     train_2.append(cur_train)
+    #     validate_2.append(cur_val)
+    print(3)
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    compare_fixed_learning_rates()
-    compare_exponential_decay_rates()
+    # compare_fixed_learning_rates()
+    # compare_exponential_decay_rates()
     fit_logistic_regression()
