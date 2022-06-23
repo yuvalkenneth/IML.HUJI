@@ -92,6 +92,8 @@ def get_gd_state_recorder_callback() -> Tuple[
 def compare_fixed_learning_rates(
         init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
         etas: Tuple[float] = (1, .1, .01, .001)):
+    min_err1 = 0
+    min_err2 = 0
     c1_rate = go.Figure()
     c2_rate = go.Figure()
     for eta in etas:
@@ -117,6 +119,10 @@ def compare_fixed_learning_rates(
                                      name=f"eta = {eta}"))
         c2_rate.add_trace(go.Scatter(x=list(range(1, 1001)), y=values2,
                                      name=f"eta = {eta}"))
+        err1 = np.min(values1)
+        err2 = np.min(values2)
+        min_err1 = err1 if err1 < min_err1 else min_err1
+        min_err2 = err2 if err2 < min_err2 else min_err2
 
     c1_rate.update_layout(title="l1 convergence rate with different fixed "
                                 "learning rate")
@@ -245,6 +251,16 @@ def fit_logistic_regression():
                                             scoring=misclassification_error)
         train.append(cur_train)
         validate.append(cur_val)
+    best_l1 = lambdas[np.argmin(validate)]
+    model = LogisticRegression(solver=GradientDescent(max_iter=20000,
+                                                      learning_rate=FixedLR(
+                                                          1e-4),
+                                                      callback=
+                                                      get_gd_state_recorder_callback()[
+                                                          0]),
+                               penalty="l1",
+                               lam=best_l1, alpha=0.5)
+
     train_2, validate_2 = [], []
     for lam in lambdas:
         model = LogisticRegression(solver=GradientDescent(max_iter=20000,
@@ -260,12 +276,26 @@ def fit_logistic_regression():
                                             scoring=misclassification_error)
         train_2.append(cur_train)
         validate_2.append(cur_val)
+    best_l2 = lambdas[np.argmin(validate_2)]
+    model_2 = LogisticRegression(solver=GradientDescent(max_iter=20000,
+                                                        learning_rate=FixedLR(
+                                                            1e-4),
+                                                        callback=
+                                                        get_gd_state_recorder_callback()[
+                                                            0]),
+                                 penalty="l2",
+                                 lam=best_l2, alpha=0.5)
+    model.fit(np.array(X_train), np.array(y_train))
+    l1_err = model.loss(np.array(X_test), np.array(y_test))
+    model_2.fit(np.array(X_train), np.array(y_train))
+    l2_err = model_2.loss(np.array(X_test), np.array(y_test))
     print(f"best alpha for ROC curve : {thresholds[np.argmax(tpr - fpr)]} "
-          f"with {np.max(tpr - fpr)}\nbest lambda for model with L1 "
-          f"regularization: {lambdas[np.argmin(validate)]} with"
-          f" {np.min(validate)}\nbest lambda for model with L2 "
-          f"regularization: {lambdas[np.argmin(validate_2)]} with "
-          f"{np.min(validate_2)}")
+          f"with {np.max(tpr - fpr)}\n"
+          f"best lambda for model with L1 "
+          f"regularization: {best_l1} with"
+          f" {l1_err}\nbest lambda for model with L2 "
+          f"regularization: {best_l2} with "
+          f"{l2_err}")
 
 
 if __name__ == '__main__':
