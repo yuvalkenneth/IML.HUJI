@@ -92,8 +92,8 @@ def get_gd_state_recorder_callback() -> Tuple[
 def compare_fixed_learning_rates(
         init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
         etas: Tuple[float] = (1, .1, .01, .001)):
-    min_err1 = 0
-    min_err2 = 0
+    min_err1 = np.inf
+    min_err2 = np.inf
     c1_rate = go.Figure()
     c2_rate = go.Figure()
     for eta in etas:
@@ -138,6 +138,7 @@ def compare_exponential_decay_rates(
         gammas: Tuple[float] = (.9, .95, .99, 1)):
     # Optimize the L1 objective using different decay-rate values of the exponentially decaying learning rate
     c_rate = go.Figure()
+    best = (np.inf, np.inf)
     for gamma in gammas:
         l1 = L1(init.copy())
         callback1, weights1, values1 = get_gd_state_recorder_callback()
@@ -148,6 +149,8 @@ def compare_exponential_decay_rates(
         c_rate.add_trace(go.Scatter(x=list(range(1, 1001)), y=values1,
                                     mode="lines",
                                     name=f'gamma = {gamma}'))
+        err = np.min(values1)
+        best = (err, gamma) if err < best[0] else best
     # Plot algorithm's convergence for the different values of gamma
     c_rate.update_layout(title="L1 with different decay rates")
     c_rate.show()
