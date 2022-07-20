@@ -139,6 +139,7 @@ class GradientDescent:
             last = f.weights
             best = best if best_output <= f.compute_output(X=X,
                                                            y=y) else f.weights
+            # if self.callback_ != default_callback:
             self.callback_(
                 self, [f.weights, f.compute_output(X=X, y=y),
                        f.compute_jacobian(X=X, y=y),

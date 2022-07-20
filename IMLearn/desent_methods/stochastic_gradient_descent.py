@@ -58,7 +58,12 @@ class StochasticGradientDescent:
             Callable function receives as input any argument relevant for the current GD iteration. Arguments
             are specified in the `GradientDescent.fit` function
         """
-        raise NotImplementedError()
+        self.learning_rate_ = learning_rate
+
+        self.tol_ = tol
+        self.max_iter_ = max_iter
+        self.callback_ = callback
+        self.batch_size = batch_size
 
     def fit(self, f: BaseModule, X: np.ndarray, y: np.ndarray):
         """
