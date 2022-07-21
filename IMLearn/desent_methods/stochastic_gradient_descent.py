@@ -112,9 +112,30 @@ class StochasticGradientDescent:
             - batch_indices: np.ndarray of shape (n_batch,)
                 Sample indices used in current SGD iteration
         """
-        raise NotImplementedError()
+        t = 1
+        avg = f.weights
+        # best = f.weights
+        # best_output = f.compute_output(X=X, y=y)
+        while t <= self.max_iter_:
+            batch = np.random.randint(0, len(X), size=self.batch_size)
+            value, gradient, eta = self._partial_fit(f, X[batch], y[batch], t)
+            w_t1 = f.weights - eta * gradient
+            delta = np.linalg.norm(f.weights - w_t1)
+            if delta < self.tol_:
+                t -= 1
+                break
+            f.weights = w_t1
+            avg += f.weights
+            self.callback_(
+                [self, f.weights, value, gradient, t, eta, delta])
+            # self.callback_([self, f.weights, value,
+            #                 gradient, t = t, eta, delta,
+            #                               batch])
+            t += 1
+        return avg / (t if t != 0 else 1)
 
-    def _partial_fit(self, f: BaseModule, X: np.ndarray, y: np.ndarray, t: int) -> Tuple[np.ndarray, np.ndarray, float]:
+    def _partial_fit(self, f: BaseModule, X: np.ndarray, y: np.ndarray,
+                     t: int) -> Tuple[np.ndarray, np.ndarray, float]:
         """
         Perform a SGD iteration over given samples
 
@@ -143,4 +164,5 @@ class StochasticGradientDescent:
         eta: float
             learning rate used at current iteration
         """
-        raise NotImplementedError()
+        return f.compute_output(X=X, y=y), f.compute_jacobian(X=X, y=y), \
+               self.learning_rate_.lr_step(t=t + 1)

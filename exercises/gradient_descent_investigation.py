@@ -80,7 +80,7 @@ def get_gd_state_recorder_callback() -> Tuple[
     weights: List[np.ndarray]
         Recorded parameters
     """
-    weights, values = [], []
+    weights, values, gradients = [], [], []
 
     def recorder(obj, lst):
         weights.append(lst[0])

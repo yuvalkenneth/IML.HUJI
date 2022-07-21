@@ -6,8 +6,6 @@ from IMLearn.learners.neural_networks.modules import FullyConnectedLayer, ReLU, 
     CrossEntropyLoss, Id
 from IMLearn.learners.neural_networks.neural_network import NeuralNetwork
 from IMLearn.desent_methods import GradientDescent, FixedLR
-from exercises.gradient_descent_investigation import \
-    get_gd_state_recorder_callback
 from IMLearn.utils.utils import split_train_test
 from utils import *
 
@@ -16,6 +14,34 @@ from plotly.subplots import make_subplots
 import plotly.io as pio
 
 pio.templates.default = "simple_white"
+
+
+def get_gd_state__callback():
+    """
+    Callback generator for the GradientDescent class, recording the objective's value and parameters at each iteration
+
+    Return:
+    -------
+    callback: Callable[[], None]
+        Callback function to be passed to the GradientDescent class, recoding the objective's value and parameters
+        at each iteration of the algorithm
+
+    values: List[np.ndarray]
+        Recorded objective values
+
+    weights: List[np.ndarray]
+        Recorded parameters
+
+    gradients: List[np.array]
+    """
+    weights, values, gradients = [], [], []
+
+    def recorder(obj, lst):
+        weights.append(lst[0])
+        values.append(lst[1])
+        gradients.append(lst[2])
+
+    return recorder, weights, values, gradients
 
 
 def generate_nonlinear_data(
@@ -110,11 +136,12 @@ def animate_decision_boundary(nn: NeuralNetwork, weights: List[np.ndarray],
 
 
 def get_layers(features, width, classes, layers=True):
+    if not layers:
+        return [FullyConnectedLayer(n_features, n_classes, Id())]
     first_layer = FullyConnectedLayer(features, width, ReLU())
     second_layer = FullyConnectedLayer(width, width, ReLU())
     last_layer = FullyConnectedLayer(width, n_classes, Id())
-    return [first_layer, second_layer, last_layer] if layers else \
-        [FullyConnectedLayer(n_features, n_classes, Id())]
+    return [first_layer, second_layer, last_layer]
 
 
 if __name__ == '__main__':
@@ -142,13 +169,15 @@ if __name__ == '__main__':
     # ---------------------------------------------------------------------------------------------#
     # Question 1: Fitting simple network with two hidden layers                                    #
     # ---------------------------------------------------------------------------------------------#
-
+    callback1, weights1, values1, grads1 = get_gd_state__callback()
+    callback2, weights2, values2, grad2 = get_gd_state__callback()
     model = NeuralNetwork(get_layers(n_features, 16, n_classes),
                           CrossEntropyLoss(),
-                          GradientDescent(FixedLR(0.1), max_iter=5000,
-                                          callback=
-                                          get_gd_state_recorder_callback()[0]))
+                          GradientDescent(FixedLR(1e-1), max_iter=5000,
+                                          callback=get_gd_state__callback()[
+                                              0]))
     model.fit(train_X, train_y)
+    print(f"accuracy: {accuracy(test_y, model.predict(test_X))}")
     plot_decision_boundary(model, lims, train_X, train_y, title="Two layered "
                                                                 "network").show()
 
@@ -159,7 +188,7 @@ if __name__ == '__main__':
                            loss_fn=CrossEntropyLoss(),
                            solver=GradientDescent(FixedLR(0.1), max_iter=5000,
                                                   callback=
-                                                  get_gd_state_recorder_callback()[
+                                                  get_gd_state__callback()[
                                                       0]))
     model2.fit(train_X, train_y)
     plot_decision_boundary(model2, lims, train_X, train_y, title="No hidden "
@@ -169,28 +198,36 @@ if __name__ == '__main__':
     # ---------------------------------------------------------------------------------------------#
     # Question 3+4: Plotting network convergence process                                           #
     # ---------------------------------------------------------------------------------------------#
-    callback1, weights1, values1 = get_gd_state_recorder_callback()
-    callback2, weights2, values2 = get_gd_state_recorder_callback()
-    model3 = NeuralNetwork(get_layers(n_features, 16, n_classes),
-                           CrossEntropyLoss(),
-                           GradientDescent(FixedLR(0.1), max_iter=5000,
-                                           callback=callback1))
+
     weights = weights1[::100]
-    # animate_decision_boundary(model3, weights, lims, train_X, train_y, title=
-    # "convergence")
+    # try:
+    animate_decision_boundary(model, weights, lims, train_X, train_y,
+                              title=
+                              "convergence")
+    # except:
+    model3 = NeuralNetwork(get_layers(n_features, 16, n_classes),
+                           CrossEntropyLoss(), GradientDescent(FixedLR(
+            1e-1), max_iter=5000, callback=callback1))
     fig1 = go.Figure().add_trace(go.Scatter(x=list(range(5000)), y=values1,
                                             name=f"convergence"))
-    fig1.add_trace(go.Scatter(x=list(range(5000)), y=np.linalg.norm(weights,
-                                                                    ord=2,
-                                                                    axis=0)))
+    fig1.add_trace(
+        go.Scatter(x=list(range(5000)), y=[np.linalg.norm(g) for g in
+                                           grads1]))
     fig1.show()
     # first_layer = FullyConnectedLayer(n_features, 6, ReLU())
     # second_layer = FullyConnectedLayer(6, 6, ReLU())
     # last_layer = FullyConnectedLayer(6, n_classes, Id())
     model4 = NeuralNetwork(get_layers(n_features, 6, n_classes),
-                           CrossEntropyLoss(), GradientDescent(FixedLR(0.1),
-                                                               max_iter=5000,
-                                                               callback=
-                                                               callback2))
-
-
+                           CrossEntropyLoss(),
+                           GradientDescent(FixedLR(0.1),
+                                           max_iter=5000,
+                                           callback=
+                                           callback2))
+    model4.fit(train_X, train_y)
+    weights = weights2[::100]
+    fig2 = go.Figure().add_trace(go.Scatter(x=list(range(5000)), y=values2,
+                                            name=f"convergence"))
+    fig2.add_trace(
+        go.Scatter(x=list(range(5000)),
+                   y=[np.linalg.norm(g) for g in grad2]))
+    fig2.show()
