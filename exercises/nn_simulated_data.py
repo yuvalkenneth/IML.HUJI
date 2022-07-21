@@ -109,6 +109,14 @@ def animate_decision_boundary(nn: NeuralNetwork, weights: List[np.ndarray],
         animation_to_gif(fig, save_name, 200, width=400, height=400)
 
 
+def get_layers(features, width, classes, layers=True):
+    first_layer = FullyConnectedLayer(features, width, ReLU())
+    second_layer = FullyConnectedLayer(width, width, ReLU())
+    last_layer = FullyConnectedLayer(width, n_classes, Id())
+    return [first_layer, second_layer, last_layer] if layers else \
+        [FullyConnectedLayer(n_features, n_classes, Id())]
+
+
 if __name__ == '__main__':
     np.random.seed(0)
 
@@ -134,35 +142,55 @@ if __name__ == '__main__':
     # ---------------------------------------------------------------------------------------------#
     # Question 1: Fitting simple network with two hidden layers                                    #
     # ---------------------------------------------------------------------------------------------#
-    f_layer = FullyConnectedLayer(n_features, 16, ReLU())
-    s_layer = FullyConnectedLayer(16, 16, ReLU())
-    l_layer = FullyConnectedLayer(16, n_classes, Id())
-    model = NeuralNetwork([f_layer, s_layer, l_layer], CrossEntropyLoss(),
+
+    model = NeuralNetwork(get_layers(n_features, 16, n_classes),
+                          CrossEntropyLoss(),
                           GradientDescent(FixedLR(0.1), max_iter=5000,
                                           callback=
                                           get_gd_state_recorder_callback()[0]))
     model.fit(train_X, train_y)
     plot_decision_boundary(model, lims, train_X, train_y, title="Two layered "
                                                                 "network").show()
-    print(3)
 
     # ---------------------------------------------------------------------------------------------#
     # Question 2: Fitting a network with no hidden layers                                          #
     # ---------------------------------------------------------------------------------------------#
-    # raise NotImplementedError()
+    model2 = NeuralNetwork(get_layers(n_features, 0, n_classes, False),
+                           loss_fn=CrossEntropyLoss(),
+                           solver=GradientDescent(FixedLR(0.1), max_iter=5000,
+                                                  callback=
+                                                  get_gd_state_recorder_callback()[
+                                                      0]))
+    model2.fit(train_X, train_y)
+    plot_decision_boundary(model2, lims, train_X, train_y, title="No hidden "
+                                                                 "layers") \
+        .show()
 
     # ---------------------------------------------------------------------------------------------#
     # Question 3+4: Plotting network convergence process                                           #
     # ---------------------------------------------------------------------------------------------#
     callback1, weights1, values1 = get_gd_state_recorder_callback()
-    model2 = NeuralNetwork([f_layer, s_layer, l_layer], CrossEntropyLoss(),
+    callback2, weights2, values2 = get_gd_state_recorder_callback()
+    model3 = NeuralNetwork(get_layers(n_features, 16, n_classes),
+                           CrossEntropyLoss(),
                            GradientDescent(FixedLR(0.1), max_iter=5000,
                                            callback=callback1))
     weights = weights1[::100]
-    animate_decision_boundary(model2, weights, lims, train_X, train_y, title=
-    "convergence")
+    # animate_decision_boundary(model3, weights, lims, train_X, train_y, title=
+    # "convergence")
     fig1 = go.Figure().add_trace(go.Scatter(x=list(range(5000)), y=values1,
                                             name=f"convergence"))
     fig1.add_trace(go.Scatter(x=list(range(5000)), y=np.linalg.norm(weights,
-                                                                    ord=2)))
+                                                                    ord=2,
+                                                                    axis=0)))
     fig1.show()
+    # first_layer = FullyConnectedLayer(n_features, 6, ReLU())
+    # second_layer = FullyConnectedLayer(6, 6, ReLU())
+    # last_layer = FullyConnectedLayer(6, n_classes, Id())
+    model4 = NeuralNetwork(get_layers(n_features, 6, n_classes),
+                           CrossEntropyLoss(), GradientDescent(FixedLR(0.1),
+                                                               max_iter=5000,
+                                                               callback=
+                                                               callback2))
+
+
